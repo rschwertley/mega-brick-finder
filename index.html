@@ -886,6 +886,7 @@ async function showPartResult(item) {
       const totalQty = parts.reduce((sum, p) => sum + (parseInt(p['Quantity']) || 0), 0);
       const row = document.createElement('div');
       row.className = 'set-row';
+      row.style.cursor = 'pointer';
       row.innerHTML = `
         <div class="set-dot"></div>
         <div class="set-info">
@@ -893,7 +894,9 @@ async function showPartResult(item) {
           <div class="set-detail">${setNum} · ${colors}</div>
         </div>
         <div class="set-qty">×${totalQty}</div>
+        <div style="font-size:18px;color:var(--muted);padding-left:8px;">›</div>
       `;
+      row.addEventListener('click', () => showSetModal(setNum, setName));
       card.appendChild(row);
     });
   }
@@ -923,6 +926,50 @@ function showLoading(msg) {
 function hideLoading() {
   document.getElementById('loading-overlay').classList.remove('visible');
 }
+
+ function showLightbox(imgUrl, name) {
+  const lb = document.createElement('div');
+  lb.className = 'lightbox';
+  lb.innerHTML = `
+    <button class="lightbox-close" onclick="this.parentElement.remove()">✕</button>
+    <img src="${imgUrl}" alt="${name || ''}">
+    <div class="lightbox-name">${name || ''}</div>
+  `;
+  lb.addEventListener('click', (e) => { if (e.target === lb) lb.remove(); });
+  document.body.appendChild(lb);
+}
+
+async function showSetModal(setNum, setName) {
+  const modal = document.createElement('div');
+  modal.className = 'set-modal';
+  modal.innerHTML = `
+    <div class="set-modal-header">
+      <div>
+        <div class="set-modal-title">${setName}</div>
+        <div class="set-modal-meta">${setNum}</div>
+      </div>
+      <button class="modal-close" onclick="this.closest('.set-modal').remove()">✕</button>
+    </div>
+    <div id="set-modal-body" style="color:var(--muted);font-size:14px;">Loading...</div>
+  `;
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
+
+  try {
+    const res = await fetch(`https://rebrickable.com/api/v3/lego/sets/${setNum}/`, {
+      headers: { 'Authorization': `key ${RB_API_KEY}` }
+    });
+    const set = await res.json();
+    document.getElementById('set-modal-body').innerHTML = `
+      <img src="${set.set_img_url || ''}" alt="${set.name}" onerror="this.style.display='none'">
+      <div style="font-size:14px;color:var(--muted);">${set.year} · ${set.num_parts} parts · ${set.theme_id ? 'Theme #' + set.theme_id : ''}</div>
+      <a class="set-modal-link" href="${set.set_url}" target="_blank">View on Rebrickable ↗</a>
+    `;
+  } catch(e) {
+    document.getElementById('set-modal-body').innerHTML = `<span style="color:#ff6b6b">Could not load set details.</span>`;
+  }
+}
+ 
 </script>
 </body>
 </html>
