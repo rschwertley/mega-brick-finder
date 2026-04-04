@@ -947,7 +947,10 @@ async function showPartResult(item) {
     });
     const availableColors = [...new Set(allMatches.map(m => m['Color']))];
     const rgb = getDominantColor(tempImg);
+    console.log('RGB detected:', rgb);
     detectedColor = matchLegoColor(rgb, availableColors);
+    console.log('Color match:', detectedColor);
+    console.log('Available colors:', availableColors);
   }
 
   // Filter by detected color, fall back to all matches
