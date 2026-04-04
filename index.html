@@ -955,7 +955,7 @@ function pushModalState() {
 }
 
 async function showSetModal(setNum, setName) {
-   pushModalState(); // ← add this
+  pushModalState();
   const modal = document.createElement('div');
   modal.className = 'set-modal';
   modal.innerHTML = `
@@ -975,14 +975,16 @@ async function showSetModal(setNum, setName) {
     const res = await fetch(`https://rebrickable.com/api/v3/lego/sets/${setNum}/`, {
       headers: { 'Authorization': `key ${RB_API_KEY}` }
     });
+    if (!res.ok) throw new Error(`API error: ${res.status}`);
     const set = await res.json();
+    const rebrickableUrl = `https://rebrickable.com/sets/${setNum}/`;
     document.getElementById('set-modal-body').innerHTML = `
-      <img src="${set.set_img_url || ''}" alt="${set.name}" onerror="this.style.display='none'">
-      <div style="font-size:14px;color:var(--muted);">${set.year} · ${set.num_parts} parts · ${set.theme_id ? 'Theme #' + set.theme_id : ''}</div>
-      <a class="set-modal-link" href="${set.set_url}" target="_blank">View on Rebrickable ↗</a>
+      <img src="${set.set_img_url || ''}" alt="${set.name || setName}" onerror="this.style.display='none'">
+      <div style="font-size:14px;color:var(--muted);">${set.year || ''} · ${set.num_parts || ''} parts</div>
+      <a class="set-modal-link" href="${rebrickableUrl}" target="_blank">View on Rebrickable ↗</a>
     `;
   } catch(e) {
-    document.getElementById('set-modal-body').innerHTML = `<span style="color:#ff6b6b">Could not load set details.</span>`;
+    document.getElementById('set-modal-body').innerHTML = `<span style="color:#ff6b6b">Could not load set details: ${e.message}</span>`;
   }
 }
  
