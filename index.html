@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0a0f">
+<title>Mega Brick Finder</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c26;
+    --border: #2a2a38;
+    --accent: #FFD600;
+    --accent2: #e8380d;
+    --cyan: #00C8FF;
+    --text: #f0f0f5;
+    --muted: #6b6b80;
+    --success: #2ecc71;
+    --radius: 16px;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    overflow-x: hidden;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100dvh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    padding: 16px 20px 0;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    position: relative;
+    z-index: 10;
+  }
+
+  .logo-svg {
+    width: 54px;
+    height: 54px;
+    flex-shrink: 0;
+  }
+
+  .logo-text-block { line-height: 1; }
+
+  .logo-title {
+    font-family: 'Arial Black', 'Bebas Neue', sans-serif;
+    font-weight: 900;
+    font-size: 22px;
+    letter-spacing: 1px;
+    line-height: 1;
+  }
+
+  .logo-title span.cyan { color: var(--cyan); }
+  .logo-title span.yellow { color: var(--accent); }
+
+  .logo-sub {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 3px;
+  }
+
+  /* ── MAIN ── */
+  main {
+    flex: 1;
+    padding: 20px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    max-width: 600px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  /* ── CAMERA CARD ── */
+  .camera-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  #preview-area {
+    width: 100%;
+    aspect-ratio: 1;
+    background: var(--surface2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #preview-area.has-image { aspect-ratio: auto; }
+  #captured-img { width: 100%; max-height: 320px; object-fit: contain; display: none; }
+  #preview-area.has-image #captured-img { display: block; }
+  #preview-area.has-image .placeholder-content { display: none; }
+
+  .placeholder-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    color: var(--muted);
+  }
+
+  .camera-icon {
+    width: 64px;
+    height: 64px;
+    border: 2px dashed var(--border);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+  }
+
+  .placeholder-content p { font-size: 14px; text-align: center; max-width: 200px; line-height: 1.4; }
+
+  .corner { position: absolute; width: 20px; height: 20px; border-color: var(--accent); border-style: solid; opacity: 0.6; }
+  .corner.tl { top: 12px; left: 12px; border-width: 2px 0 0 2px; border-radius: 3px 0 0 0; }
+  .corner.tr { top: 12px; right: 12px; border-width: 2px 2px 0 0; border-radius: 0 3px 0 0; }
+  .corner.bl { bottom: 12px; left: 12px; border-width: 0 0 2px 2px; border-radius: 0 0 0 3px; }
+  .corner.br { bottom: 12px; right: 12px; border-width: 0 2px 2px 0; border-radius: 0 0 3px 0; }
+
+  .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--border); }
+
+  .btn-row button {
+    background: var(--surface);
+    border: none;
+    color: var(--text);
+    padding: 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .btn-row button:active { background: var(--surface2); }
+  .btn-row button.primary { color: var(--accent); }
+  #file-input { display: none; }
+
+  /* ── IDENTIFY BUTTON ── */
+  #identify-btn {
+    width: 100%;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: var(--radius);
+    padding: 16px;
+    font-family: 'Arial Black', sans-serif;
+    font-size: 18px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.2s;
+    -webkit-tap-highlight-color: transparent;
+    box-shadow: 0 4px 20px rgba(255,214,0,0.3);
+  }
+
+  #identify-btn:disabled {
+    background: var(--surface2);
+    color: var(--muted);
+    box-shadow: none;
+    cursor: not-allowed;
+  }
+
+  #identify-btn:not(:disabled):active { transform: scale(0.98); box-shadow: 0 2px 10px rgba(255,214,0,0.2); }
+
+  /* ── MANUAL INPUT ── */
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--muted);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .manual-row { display: flex; gap: 10px; }
+
+  .manual-row input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+  }
+
+  .manual-row input:focus { border-color: var(--accent); }
+  .manual-row input::placeholder { color: var(--muted); }
+
+  .manual-row button {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    padding: 14px 18px;
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .manual-row button:active { background: var(--border); }
+
+  /* ── STATUS ── */
+  #status {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    font-size: 14px;
+    color: var(--muted);
+    display: none;
+    align-items: center;
+    gap: 10px;
+  }
+
+  #status.visible { display: flex; }
+  #status.error { border-color: var(--accent2); color: #ff6b6b; }
+  #status.success { border-color: var(--success); color: var(--success); }
+
+  .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── RESULTS ── */
+  #results { display: none; flex-direction: column; gap: 16px; }
+  #results.visible { display: flex; }
+
+  .part-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .part-header { display: flex; gap: 16px; padding: 16px; align-items: flex-start; }
+
+  .part-img {
+    width: 80px; height: 80px;
+    object-fit: contain;
+    background: var(--surface2);
+    border-radius: 10px;
+    flex-shrink: 0;
+    border: 1px solid var(--border);
+  }
+
+  .part-img-placeholder {
+    width: 80px; height: 80px;
+    background: var(--surface2);
+    border-radius: 10px;
+    flex-shrink: 0;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+  }
+
+  .part-info { flex: 1; min-width: 0; }
+
+  .part-num {
+    font-family: 'Arial Black', sans-serif;
+    font-size: 20px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .part-name { font-size: 14px; color: var(--text); margin-top: 4px; line-height: 1.3; }
+  .part-meta { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+  .score-badge {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 4px 10px;
+    font-size: 12px;
+    color: var(--accent);
+    font-weight: 600;
+    flex-shrink: 0;
+    align-self: flex-start;
+  }
+
+  .sets-label {
+    padding: 12px 16px 10px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    font-weight: 600;
+    border-top: 1px solid var(--border);
+  }
+
+  .set-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+
+  .set-row:active { background: var(--surface2); }
+
+  .set-dot { width: 8px; height: 8px; background: var(--cyan); border-radius: 50%; flex-shrink: 0; }
+  .set-info { flex: 1; min-width: 0; }
+  .set-name { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .set-detail { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .set-qty { font-family: 'Arial Black', sans-serif; font-size: 20px; font-weight: 900; color: var(--accent); flex-shrink: 0; }
+
+  .no-sets { padding: 16px; text-align: center; color: var(--muted); font-size: 14px; border-top: 1px solid var(--border); }
+
+  /* ── CANDIDATES ── */
+  .candidates-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; padding: 14px 16px 10px; font-weight: 600; }
+
+  .candidate-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    background: none;
+    border-left: none; border-right: none; border-bottom: none;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+    transition: background 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .candidate-btn:active { background: var(--surface2); }
+
+  .candidate-img {
+    width: 48px; height: 48px;
+    object-fit: contain;
+    background: var(--surface2);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .candidate-info { flex: 1; min-width: 0; }
+  .candidate-num { font-size: 13px; color: var(--accent); font-weight: 600; }
+  .candidate-name { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .candidate-score { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  /* ── FOOTER ── */
+  footer { padding: 16px 20px; text-align: center; font-size: 11px; color: var(--muted); letter-spacing: 0.5px; }
+
+  /* ── LOADING OVERLAY ── */
+  .loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(10,10,15,0.85);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    z-index: 100;
+    backdrop-filter: blur(4px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+
+  .loading-overlay.visible { opacity: 1; pointer-events: all; }
+
+  .loading-overlay .big-spinner {
+    width: 48px; height: 48px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  .loading-overlay p {
+    font-family: 'Arial Black', sans-serif;
+    font-size: 16px;
+    letter-spacing: 2px;
+    color: var(--muted);
+  }
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loading-overlay">
+  <div class="big-spinner"></div>
+  <p id="loading-text">IDENTIFYING PART...</p>
+</div>
+
+<header>
+  <!-- Mini logo SVG -->
+  <svg class="logo-svg" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+    <!-- Legs -->
+    <rect x="34" y="82" width="18" height="28" rx="4" fill="#1565C0"/>
+    <rect x="56" y="82" width="18" height="28" rx="4" fill="#1565C0"/>
+    <!-- Boots -->
+    <rect x="30" y="100" width="24" height="10" rx="3" fill="#0D47A1"/>
+    <rect x="54" y="100" width="24" height="10" rx="3" fill="#0D47A1"/>
+    <!-- Torso -->
+    <rect x="26" y="52" width="60" height="36" rx="6" fill="#1976D2"/>
+    <!-- Panel -->
+    <rect x="34" y="58" width="42" height="22" rx="4" fill="#0D47A1"/>
+    <!-- Core -->
+    <circle cx="55" cy="69" r="9" fill="#00C8FF" opacity="0.9"/>
+    <circle cx="55" cy="69" r="5" fill="#fff" opacity="0.95"/>
+    <circle cx="55" cy="69" r="3" fill="#00C8FF"/>
+    <!-- Left arm -->
+    <rect x="8"  y="54" width="16" height="30" rx="6" fill="#1976D2"/>
+    <rect x="5"  y="78" width="20" height="12" rx="4" fill="#1565C0"/>
+    <!-- Right arm -->
+    <rect x="86" y="54" width="16" height="28" rx="6" fill="#1976D2"/>
+    <!-- Cannon -->
+    <rect x="82" y="76" width="32" height="16" rx="5" fill="#1565C0"/>
+    <rect x="106" y="72" width="10" height="24" rx="4" fill="#0D47A1"/>
+    <circle cx="111" cy="84" r="6" fill="none" stroke="#00C8FF" stroke-width="2" opacity="0.9"/>
+    <circle cx="111" cy="84" r="3" fill="#00C8FF" opacity="0.7"/>
+    <circle cx="118" cy="84" r="2" fill="#FFD600"/>
+    <!-- Neck -->
+    <rect x="46" y="44" width="18" height="10" rx="3" fill="#1565C0"/>
+    <!-- Head -->
+    <rect x="28" y="18" width="54" height="30" rx="5" fill="#1976D2"/>
+    <!-- Studs -->
+    <circle cx="42" cy="20" r="5" fill="#1565C0"/>
+    <circle cx="42" cy="20" r="3" fill="#1976D2"/>
+    <circle cx="55" cy="20" r="5" fill="#1565C0"/>
+    <circle cx="55" cy="20" r="3" fill="#1976D2"/>
+    <circle cx="68" cy="20" r="5" fill="#1565C0"/>
+    <circle cx="68" cy="20" r="3" fill="#1976D2"/>
+    <!-- Brim -->
+    <rect x="24" y="26" width="62" height="6" rx="3" fill="#1565C0"/>
+    <!-- Visor -->
+    <rect x="32" y="33" width="46" height="12" rx="4" fill="#001F5B"/>
+    <!-- Eyes -->
+    <rect x="36" y="35" width="12" height="8" rx="2" fill="#FFD600" opacity="0.9"/>
+    <rect x="62" y="35" width="12" height="8" rx="2" fill="#FFD600" opacity="0.9"/>
+    <rect x="40" y="37" width="5"  height="5" rx="1" fill="#FF6D00"/>
+    <rect x="66" y="37" width="5"  height="5" rx="1" fill="#FF6D00"/>
+  </svg>
+
+  <div class="logo-text-block">
+    <div class="logo-title">
+      <span class="yellow">MEGA</span> <span class="cyan">BRICK</span> <span class="yellow">FINDER</span>
+    </div>
+    <div class="logo-sub">Scan · Identify · Find</div>
+  </div>
+</header>
+
+<main>
+
+  <!-- Camera Card -->
+  <div class="camera-card">
+    <div id="preview-area">
+      <div class="corner tl"></div>
+      <div class="corner tr"></div>
+      <div class="corner bl"></div>
+      <div class="corner br"></div>
+      <div class="placeholder-content">
+        <div class="camera-icon">📷</div>
+        <p>Take a photo of a LEGO part to identify it</p>
+      </div>
+      <img id="captured-img" alt="Captured part">
+    </div>
+    <div class="btn-row">
+      <button class="primary" onclick="document.getElementById('file-input').click()">
+        📷 Take Photo
+      </button>
+      <button onclick="clearImage()">✕ Clear</button>
+    </div>
+  </div>
+
+  <input type="file" id="file-input" accept="image/*" capture="environment">
+
+  <!-- Identify Button -->
+  <button id="identify-btn" disabled onclick="identifyPart()">
+    🔍 IDENTIFY PART
+  </button>
+
+  <!-- Divider -->
+  <div class="divider">or enter manually</div>
+
+  <!-- Manual Input -->
+  <div class="manual-row">
+    <input type="text" id="manual-input" placeholder="Part number (e.g. 3001)" autocomplete="off" autocorrect="off" spellcheck="false">
+    <button onclick="manualLookup()">→</button>
+  </div>
+
+  <!-- Status -->
+  <div id="status"></div>
+
+  <!-- Results -->
+  <div id="results"></div>
+
+</main>
+
+<footer>Powered by Brickognize &amp; Rebrickable</footer>
+
+<script>
+const SHEETS_API  = 'https://script.google.com/macros/s/AKfycbwWY3esy4NF6Ejt1n91NPPdX-qiXvCfGqpwddxbtuV2KbDKO_Yp0CdUrE1e0zI82K3F/exec';
+const RB_API_KEY  = 'YOUR_REBRICKABLE_API_KEY_HERE';
+
+let capturedFile = null;
+let partsInventory = [];
+let setsInventory = [];
+let inventoryLoaded = false;
+
+document.getElementById('file-input').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  capturedFile = file;
+  const url = URL.createObjectURL(file);
+  const img = document.getElementById('captured-img');
+  img.src = url;
+  document.getElementById('preview-area').classList.add('has-image');
+  document.getElementById('identify-btn').disabled = false;
+  clearResults();
+});
+
+document.getElementById('manual-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') manualLookup();
+});
+
+loadInventory();
+
+async function loadInventory() {
+  try {
+    const [partsRes, setsRes] = await Promise.all([
+      fetch(`${SHEETS_API}?action=getParts`),
+      fetch(`${SHEETS_API}?action=getSets`)
+    ]);
+    partsInventory = await partsRes.json();
+    setsInventory  = await setsRes.json();
+    inventoryLoaded = true;
+  } catch (e) {
+    console.error('Failed to load inventory:', e);
+  }
+}
+
+function clearImage() {
+  capturedFile = null;
+  document.getElementById('captured-img').src = '';
+  document.getElementById('preview-area').classList.remove('has-image');
+  document.getElementById('identify-btn').disabled = true;
+  document.getElementById('file-input').value = '';
+  clearResults();
+}
+
+async function identifyPart() {
+  if (!capturedFile) return;
+  showLoading('IDENTIFYING PART...');
+  try {
+    const formData = new FormData();
+    formData.append('file', capturedFile);
+    const res = await fetch('https://api.brickognize.com/predict/', { method: 'POST', body: formData });
+    if (!res.ok) throw new Error(`Brickognize error: ${res.status}`);
+    const data = await res.json();
+    hideLoading();
+    if (!data.items || data.items.length === 0) {
+      showStatus('No parts identified. Try a clearer photo.', 'error');
+      return;
+    }
+    const items = data.items;
+    if (items.length === 1 || items[0].score > 0.85) {
+      await showPartResult(items[0]);
+    } else {
+      showCandidates(items.slice(0, 5));
+    }
+  } catch (e) {
+    hideLoading();
+    showStatus(`Error: ${e.message}`, 'error');
+  }
+}
+
+async function manualLookup() {
+  const partNum = document.getElementById('manual-input').value.trim();
+  if (!partNum) return;
+  showLoading('LOOKING UP PART...');
+  try {
+    const res = await fetch(`https://rebrickable.com/api/v3/lego/parts/${partNum}/`, {
+      headers: { 'Authorization': `key ${RB_API_KEY}` }
+    });
+    if (!res.ok) throw new Error('Part not found on Rebrickable');
+    const part = await res.json();
+    hideLoading();
+    await showPartResult({ id: part.part_num, name: part.name, img_url: part.part_img_url, score: 1 });
+  } catch(e) {
+    hideLoading();
+    showStatus(`${e.message}`, 'error');
+  }
+}
+
+function showCandidates(items) {
+  clearResults();
+  const results = document.getElementById('results');
+  results.classList.add('visible');
+  const card = document.createElement('div');
+  card.className = 'part-card';
+  card.innerHTML = `<div class="candidates-label">Multiple matches — tap to select</div>`;
+  items.forEach(item => {
+    const btn = document.createElement('button');
+    btn.className = 'candidate-btn';
+    const scorePercent = Math.round((item.score || 0) * 100);
+    btn.innerHTML = `
+      <img class="candidate-img" src="${item.img_url || ''}" onerror="this.style.display='none'" alt="">
+      <div class="candidate-info">
+        <div class="candidate-num">${item.id}</div>
+        <div class="candidate-name">${item.name || ''}</div>
+        <div class="candidate-score">${scorePercent}% confidence</div>
+      </div>
+    `;
+    btn.onclick = () => showPartResult(item);
+    card.appendChild(btn);
+  });
+  results.appendChild(card);
+}
+
+async function showPartResult(item) {
+  clearResults();
+  if (!inventoryLoaded) {
+    showLoading('LOADING INVENTORY...');
+    await loadInventory();
+    hideLoading();
+  }
+  const partNum = item.id;
+  const scorePercent = item.score < 1 ? Math.round(item.score * 100) + '%' : null;
+
+  const matches = partsInventory.filter(p =>
+    p['Part Number'] && p['Part Number'].toString().toLowerCase() === partNum.toString().toLowerCase()
+  );
+
+  const bySet = {};
+  matches.forEach(m => {
+    const sn = m['Set Number'];
+    if (!bySet[sn]) bySet[sn] = [];
+    bySet[sn].push(m);
+  });
+
+  const setNameMap = {};
+  setsInventory.forEach(s => { setNameMap[s['Set Number']] = s['Name']; });
+
+  const results = document.getElementById('results');
+  results.classList.add('visible');
+
+  const card = document.createElement('div');
+  card.className = 'part-card';
+
+  const imgHtml = item.img_url
+    ? `<img class="part-img" src="${item.img_url}" alt="${item.name || ''}" onerror="this.parentElement.innerHTML='<div class=\\'part-img-placeholder\\'>🧱</div>'">`
+    : `<div class="part-img-placeholder">🧱</div>`;
+
+  const scoreBadge = scorePercent ? `<div class="score-badge">${scorePercent}</div>` : '';
+
+  const setCount = Object.keys(bySet).length;
+  card.innerHTML = `
+    <div class="part-header">
+      ${imgHtml}
+      <div class="part-info">
+        <div class="part-num">${partNum}</div>
+        <div class="part-name">${item.name || 'Unknown part'}</div>
+        <div class="part-meta"><a href="https://rebrickable.com/parts/${partNum}/" target="_blank" style="color:var(--muted);text-decoration:none;">View on Rebrickable ↗</a></div>
+      </div>
+      ${scoreBadge}
+    </div>
+    <div class="sets-label">Found in ${setCount} set(s) in your collection</div>
+  `;
+
+  if (setCount === 0) {
+    card.innerHTML += `<div class="no-sets">This part isn't in any of your sets.</div>`;
+  } else {
+    Object.entries(bySet).forEach(([setNum, parts]) => {
+      const setName = setNameMap[setNum] || setNum;
+      const colors = [...new Set(parts.map(p => p['Color']))].join(', ');
+      const totalQty = parts.reduce((sum, p) => sum + (parseInt(p['Quantity']) || 0), 0);
+      const row = document.createElement('div');
+      row.className = 'set-row';
+      row.innerHTML = `
+        <div class="set-dot"></div>
+        <div class="set-info">
+          <div class="set-name">${setName}</div>
+          <div class="set-detail">${setNum} · ${colors}</div>
+        </div>
+        <div class="set-qty">×${totalQty}</div>
+      `;
+      card.appendChild(row);
+    });
+  }
+
+  results.appendChild(card);
+}
+
+function showStatus(msg, type = '') {
+  const el = document.getElementById('status');
+  el.className = `visible ${type}`;
+  el.innerHTML = type === 'loading'
+    ? `<div class="spinner"></div><span>${msg}</span>`
+    : `<span>${msg}</span>`;
+}
+
+function clearResults() {
+  document.getElementById('results').classList.remove('visible');
+  document.getElementById('results').innerHTML = '';
+  document.getElementById('status').className = '';
+}
+
+function showLoading(msg) {
+  document.getElementById('loading-text').textContent = msg;
+  document.getElementById('loading-overlay').classList.add('visible');
+}
+
+function hideLoading() {
+  document.getElementById('loading-overlay').classList.remove('visible');
+}
+</script>
+</body>
+</html>
