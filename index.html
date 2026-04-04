@@ -668,6 +668,8 @@ let capturedFile = null;
 let partsInventory = [];
 let setsInventory = [];
 let inventoryLoaded = false;
+let legoColorMap = {};
+let colorsLoaded = false;
 
 document.getElementById('file-input').addEventListener('change', function(e) {
   const file = e.target.files[0];
@@ -686,6 +688,7 @@ document.getElementById('manual-input').addEventListener('keydown', function(e) 
 });
 
 loadInventory();
+loadColors();
 
 async function loadInventory() {
   try {
@@ -701,6 +704,27 @@ async function loadInventory() {
   }
 }
 
+async function loadColors() {
+  try {
+    const res = await fetch(`https://rebrickable.com/api/v3/lego/colors/?page_size=200&key=${RB_API_KEY}`);
+    const data = await res.json();
+    data.results.forEach(color => {
+      if (color.rgb) {
+        const hex = color.rgb;
+        legoColorMap[color.name] = {
+          r: parseInt(hex.substring(0,2), 16),
+          g: parseInt(hex.substring(2,4), 16),
+          b: parseInt(hex.substring(4,6), 16)
+        };
+      }
+    });
+    colorsLoaded = true;
+    console.log(`Loaded ${Object.keys(legoColorMap).length} LEGO colors`);
+  } catch(e) {
+    console.error('Failed to load colors:', e);
+  }
+}
+ 
 function clearImage() {
   capturedFile = null;
   document.getElementById('captured-img').src = '';
@@ -858,55 +882,13 @@ function getDominantColor(imgElement) {
 }
 
 function matchLegoColor(rgb, availableColors) {
-  if (!rgb) return null;
+  if (!rgb || !colorsLoaded) return null;
 
-  // LEGO color name → approximate RGB
-  const legoColors = {
-    'Black': {r:33,g:33,b:33},
-    'White': {r:242,g:243,b:242},
-    'Light Bluish Gray': {r:171,g:173,b:172},
-    'Dark Bluish Gray': {r:108,g:110,b:104},
-    'Red': {r:196,g:40,b:27},
-    'Blue': {r:13,g:105,b:171},
-    'Yellow': {r:245,g:205,b:47},
-    'Green': {r:75,g:151,b:74},
-    'Orange': {r:254,g:138,b:24},
-    'Dark Orange': {r:169,g:85,b:10},
-    'Brown': {r:88,g:57,b:39},
-    'Tan': {r:222,g:198,b:156},
-    'Dark Tan': {r:138,g:114,b:78},
-    'Lime': {r:165,g:202,b:24},
-    'Medium Blue': {r:115,g:150,b:200},
-    'Dark Blue': {r:20,g:48,b:100},
-    'Dark Green': {r:39,g:70,b:44},
-    'Magenta': {r:144,g:31,b:95},
-    'Pink': {r:252,g:185,b:193},
-    'Purple': {r:107,g:50,b:124},
-    'Dark Purple': {r:63,g:24,b:99},
-    'Bright Pink': {r:228,g:173,b:200},
-    'Medium Lavender': {r:160,g:110,b:185},
-    'Lavender': {r:205,g:164,b:222},
-    'Sand Blue': {r:112,g:142,b:169},
-    'Sand Green': {r:120,g:144,b:129},
-    'Dark Red': {r:114,g:14,b:15},
-    'Coral': {r:255,g:109,b:90},
-    'Nougat': {r:204,g:142,b:104},
-    'Medium Nougat': {r:175,g:116,b:70},
-    'Trans-Clear': {r:236,g:236,b:236},
-    'Trans-Red': {r:196,g:40,b:27},
-    'Trans-Blue': {r:13,g:105,b:171},
-    'Trans-Yellow': {r:245,g:205,b:47},
-    'Trans-Green': {r:75,g:151,b:74},
-    'Trans-Orange': {r:254,g:138,b:24},
-  };
-
-  // Only match against colors actually in the user's inventory
   let bestMatch = null;
   let bestDistance = Infinity;
 
   availableColors.forEach(colorName => {
-    // Find closest LEGO color definition
-    const known = legoColors[colorName];
+    const known = legoColorMap[colorName];
     if (!known) return;
     const dist = Math.sqrt(
       Math.pow(rgb.r - known.r, 2) +
@@ -919,10 +901,15 @@ function matchLegoColor(rgb, availableColors) {
     }
   });
 
-  // Only return a match if we're reasonably confident (distance < 120)
-  return bestDistance < 120 ? { color: bestMatch, confidence: Math.round((1 - bestDistance/120) * 100) } : null;
+  return bestDistance < 100 ? { color: bestMatch, confidence: Math.round((1 - bestDistance/100) * 100) } : null;
 }
- 
+
+function legoColorToHex(colorName) {
+  const c = legoColorMap[colorName];
+  if (c) return `rgb(${c.r},${c.g},${c.b})`;
+  return '#888888';
+}
+
 async function showPartResult(item) {
   clearResults();
   if (!inventoryLoaded) {
