@@ -927,7 +927,21 @@ function hideLoading() {
   document.getElementById('loading-overlay').classList.remove('visible');
 }
 
+ // ── BACK BUTTON HANDLING ─────────────────────────────────────────────────────
+window.addEventListener('popstate', () => {
+  // Close any open modal/lightbox on back button
+  const lightbox = document.querySelector('.lightbox');
+  const setModal = document.querySelector('.set-modal');
+  if (lightbox) { lightbox.remove(); return; }
+  if (setModal) { setModal.remove(); return; }
+});
+
+function pushModalState() {
+  history.pushState({ modal: true }, '');
+}
+ 
  function showLightbox(imgUrl, name) {
+    pushModalState(); // ← add this
   const lb = document.createElement('div');
   lb.className = 'lightbox';
   lb.innerHTML = `
@@ -940,6 +954,7 @@ function hideLoading() {
 }
 
 async function showSetModal(setNum, setName) {
+   pushModalState(); // ← add this
   const modal = document.createElement('div');
   modal.className = 'set-modal';
   modal.innerHTML = `
