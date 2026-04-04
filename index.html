@@ -601,7 +601,7 @@ async function identifyPart() {
   showLoading('IDENTIFYING PART...');
   try {
     const formData = new FormData();
-    formData.append('file', capturedFile);
+    formData.append('query_image', capturedFile);
     const res = await fetch('https://api.brickognize.com/predict/', { method: 'POST', body: formData });
     if (!res.ok) throw new Error(`Brickognize error: ${res.status}`);
     const data = await res.json();
