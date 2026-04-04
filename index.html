@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0a0a0f">
-<link rel="manifest" href="manifest.json?">
+<link rel="manifest" href="manifest.json">
 <title>Mega Brick Finder</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -27,114 +27,27 @@
     --radius: 16px;
   }
 
-  html, body {
-    height: 100%;
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'DM Sans', sans-serif;
-    overflow-x: hidden;
-  }
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; overflow-x: hidden; }
+  body { display: flex; flex-direction: column; min-height: 100dvh; }
 
-  body {
-    display: flex;
-    flex-direction: column;
-    min-height: 100dvh;
-  }
-
-  /* ── HEADER ── */
-  header {
-    padding: 16px 20px 0;
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    position: relative;
-    z-index: 10;
-  }
-
-  .logo-svg {
-    width: 54px;
-    height: 54px;
-    flex-shrink: 0;
-  }
-
+  header { padding: 16px 20px 0; display: flex; align-items: center; gap: 14px; position: relative; z-index: 10; }
+  .logo-svg { width: 54px; height: 54px; flex-shrink: 0; }
   .logo-text-block { line-height: 1; }
-
-  .logo-title {
-    font-family: 'Arial Black', 'Bebas Neue', sans-serif;
-    font-weight: 900;
-    font-size: 22px;
-    letter-spacing: 1px;
-    line-height: 1;
-  }
-
+  .logo-title { font-family: 'Arial Black', 'Bebas Neue', sans-serif; font-weight: 900; font-size: 22px; letter-spacing: 1px; line-height: 1; }
   .logo-title span.cyan { color: var(--cyan); }
   .logo-title span.yellow { color: var(--accent); }
+  .logo-sub { font-size: 10px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-top: 3px; }
 
-  .logo-sub {
-    font-size: 10px;
-    color: var(--muted);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    margin-top: 3px;
-  }
+  main { flex: 1; padding: 20px; display: flex; flex-direction: column; gap: 18px; max-width: 600px; width: 100%; margin: 0 auto; }
 
-  /* ── MAIN ── */
-  main {
-    flex: 1;
-    padding: 20px 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
-    max-width: 600px;
-    width: 100%;
-    margin: 0 auto;
-  }
-
-  /* ── CAMERA CARD ── */
-  .camera-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    overflow: hidden;
-  }
-
-  #preview-area {
-    width: 100%;
-    aspect-ratio: 1;
-    background: var(--surface2);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    position: relative;
-    overflow: hidden;
-  }
-
+  .camera-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  #preview-area { width: 100%; aspect-ratio: 1; background: var(--surface2); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; position: relative; overflow: hidden; }
   #preview-area.has-image { aspect-ratio: auto; }
   #captured-img { width: 100%; max-height: 320px; object-fit: contain; display: none; }
   #preview-area.has-image #captured-img { display: block; }
   #preview-area.has-image .placeholder-content { display: none; }
-
-  .placeholder-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    color: var(--muted);
-  }
-
-  .camera-icon {
-    width: 64px;
-    height: 64px;
-    border: 2px dashed var(--border);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 28px;
-  }
-
+  .placeholder-content { display: flex; flex-direction: column; align-items: center; gap: 10px; color: var(--muted); }
+  .camera-icon { width: 64px; height: 64px; border: 2px dashed var(--border); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; }
   .placeholder-content p { font-size: 14px; text-align: center; max-width: 200px; line-height: 1.4; }
 
   .corner { position: absolute; width: 20px; height: 20px; border-color: var(--accent); border-style: solid; opacity: 0.6; }
@@ -144,406 +57,86 @@
   .corner.br { bottom: 12px; right: 12px; border-width: 0 2px 2px 0; border-radius: 0 0 3px 0; }
 
   .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--border); }
-
-  .btn-row button {
-    background: var(--surface);
-    border: none;
-    color: var(--text);
-    padding: 14px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    transition: background 0.15s;
-    -webkit-tap-highlight-color: transparent;
-  }
-
+  .btn-row button { background: var(--surface); border: none; color: var(--text); padding: 14px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.15s; -webkit-tap-highlight-color: transparent; }
   .btn-row button:active { background: var(--surface2); }
   .btn-row button.primary { color: var(--accent); }
   #file-input { display: none; }
 
-  /* ── IDENTIFY BUTTON ── */
-  #identify-btn {
-    width: 100%;
-    background: var(--accent);
-    color: #000;
-    border: none;
-    border-radius: var(--radius);
-    padding: 16px;
-    font-family: 'Arial Black', sans-serif;
-    font-size: 18px;
-    font-weight: 900;
-    letter-spacing: 2px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    transition: all 0.2s;
-    -webkit-tap-highlight-color: transparent;
-    box-shadow: 0 4px 20px rgba(255,214,0,0.3);
-  }
-
-  #identify-btn:disabled {
-    background: var(--surface2);
-    color: var(--muted);
-    box-shadow: none;
-    cursor: not-allowed;
-  }
-
+  #identify-btn { width: 100%; background: var(--accent); color: #000; border: none; border-radius: var(--radius); padding: 16px; font-family: 'Arial Black', sans-serif; font-size: 18px; font-weight: 900; letter-spacing: 2px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.2s; -webkit-tap-highlight-color: transparent; box-shadow: 0 4px 20px rgba(255,214,0,0.3); }
+  #identify-btn:disabled { background: var(--surface2); color: var(--muted); box-shadow: none; cursor: not-allowed; }
   #identify-btn:not(:disabled):active { transform: scale(0.98); box-shadow: 0 2px 10px rgba(255,214,0,0.2); }
 
-  /* ── MANUAL INPUT ── */
-  .divider {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    color: var(--muted);
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
+  .divider { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
   .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
   .manual-row { display: flex; gap: 10px; }
-
-  .manual-row input {
-    flex: 1;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 14px 16px;
-    color: var(--text);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 15px;
-    outline: none;
-    transition: border-color 0.2s;
-    -webkit-appearance: none;
-  }
-
+  .manual-row input { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 15px; outline: none; transition: border-color 0.2s; -webkit-appearance: none; }
   .manual-row input:focus { border-color: var(--accent); }
   .manual-row input::placeholder { color: var(--muted); }
-
-  .manual-row button {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    color: var(--text);
-    padding: 14px 18px;
-    font-size: 18px;
-    cursor: pointer;
-    transition: all 0.15s;
-    -webkit-tap-highlight-color: transparent;
-  }
-
+  .manual-row button { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); padding: 14px 18px; font-size: 18px; cursor: pointer; transition: all 0.15s; -webkit-tap-highlight-color: transparent; }
   .manual-row button:active { background: var(--border); }
 
-  /* ── STATUS ── */
-  #status {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 14px 16px;
-    font-size: 14px;
-    color: var(--muted);
-    display: none;
-    align-items: center;
-    gap: 10px;
-  }
-
+  #status { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; font-size: 14px; color: var(--muted); display: none; align-items: center; gap: 10px; }
   #status.visible { display: flex; }
   #status.error { border-color: var(--accent2); color: #ff6b6b; }
   #status.success { border-color: var(--success); color: var(--success); }
 
-  .spinner {
-    width: 16px;
-    height: 16px;
-    border: 2px solid var(--border);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-    flex-shrink: 0;
-  }
-
+  .spinner { width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* ── RESULTS ── */
   #results { display: none; flex-direction: column; gap: 16px; }
   #results.visible { display: flex; }
 
-  .part-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    overflow: hidden;
-  }
-
+  .part-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
   .part-header { display: flex; gap: 16px; padding: 16px; align-items: flex-start; }
-
-  .part-img {
-    width: 80px; height: 80px;
-    object-fit: contain;
-    background: var(--surface2);
-    border-radius: 10px;
-    flex-shrink: 0;
-    border: 1px solid var(--border);
-  }
-
-  .part-img-placeholder {
-    width: 80px; height: 80px;
-    background: var(--surface2);
-    border-radius: 10px;
-    flex-shrink: 0;
-    border: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 28px;
-  }
-
+  .part-img { width: 80px; height: 80px; object-fit: contain; background: var(--surface2); border-radius: 10px; flex-shrink: 0; border: 1px solid var(--border); }
+  .part-img-placeholder { width: 80px; height: 80px; background: var(--surface2); border-radius: 10px; flex-shrink: 0; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 28px; }
   .part-info { flex: 1; min-width: 0; }
-
-  .part-num {
-    font-family: 'Arial Black', sans-serif;
-    font-size: 20px;
-    font-weight: 900;
-    letter-spacing: 1px;
-    color: var(--accent);
-    line-height: 1;
-  }
-
+  .part-num { font-family: 'Arial Black', sans-serif; font-size: 20px; font-weight: 900; letter-spacing: 1px; color: var(--accent); line-height: 1; }
   .part-name { font-size: 14px; color: var(--text); margin-top: 4px; line-height: 1.3; }
   .part-meta { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .score-badge { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 4px 10px; font-size: 12px; color: var(--accent); font-weight: 600; flex-shrink: 0; align-self: flex-start; }
 
-  .score-badge {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 4px 10px;
-    font-size: 12px;
-    color: var(--accent);
-    font-weight: 600;
-    flex-shrink: 0;
-    align-self: flex-start;
-  }
-
-  .sets-label {
-    padding: 12px 16px 10px;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    color: var(--muted);
-    font-weight: 600;
-    border-top: 1px solid var(--border);
-  }
-
-  .set-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 16px;
-    border-top: 1px solid var(--border);
-    transition: background 0.15s;
-  }
-
+  .sets-label { padding: 12px 16px 10px; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); font-weight: 600; border-top: 1px solid var(--border); }
+  .set-row { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-top: 1px solid var(--border); transition: background 0.15s; cursor: pointer; }
   .set-row:active { background: var(--surface2); }
-
   .set-dot { width: 8px; height: 8px; background: var(--cyan); border-radius: 50%; flex-shrink: 0; }
   .set-info { flex: 1; min-width: 0; }
   .set-name { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .set-detail { font-size: 12px; color: var(--muted); margin-top: 2px; }
   .set-qty { font-family: 'Arial Black', sans-serif; font-size: 20px; font-weight: 900; color: var(--accent); flex-shrink: 0; }
-
   .no-sets { padding: 16px; text-align: center; color: var(--muted); font-size: 14px; border-top: 1px solid var(--border); }
 
-  /* ── CANDIDATES ── */
+  .color-swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.2); margin-right: 4px; vertical-align: middle; flex-shrink: 0; }
+
   .candidates-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; padding: 14px 16px 10px; font-weight: 600; }
-
-  .candidate-btn {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 16px;
-    border-top: 1px solid var(--border);
-    background: none;
-    border-left: none; border-right: none; border-bottom: none;
-    color: var(--text);
-    font-family: 'DM Sans', sans-serif;
-    cursor: pointer;
-    width: 100%;
-    text-align: left;
-    transition: background 0.15s;
-    -webkit-tap-highlight-color: transparent;
-  }
-
+  .candidate-btn { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-top: 1px solid var(--border); background: none; border-left: none; border-right: none; border-bottom: none; color: var(--text); font-family: 'DM Sans', sans-serif; cursor: pointer; width: 100%; text-align: left; transition: background 0.15s; -webkit-tap-highlight-color: transparent; }
   .candidate-btn:active { background: var(--surface2); }
-
-  .candidate-img {
-    width: 80px; height: 80px;
-    object-fit: contain;
-    background: var(--surface2);
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    flex-shrink: 0;
-  }
-
-/* Lightbox */
-.lightbox {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.92);
-  z-index: 200;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  padding: 24px;
-}
-
-.lightbox img {
-  max-width: 100%;
-  max-height: 60vh;
-  object-fit: contain;
-  border-radius: 12px;
-}
-
-.lightbox-name {
-  font-size: 16px;
-  font-weight: 500;
-  text-align: center;
-  color: var(--text);
-}
-
-.lightbox-close {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 50%;
-  width: 40px; height: 40px;
-  color: var(--text);
-  font-size: 20px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* Set modal */
-.set-modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.92);
-  z-index: 200;
-  display: flex;
-  flex-direction: column;
-  padding: 24px;
-  gap: 16px;
-  overflow-y: auto;
-}
-
-.set-modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-}
-
-.set-modal img {
-  width: 100%;
-  max-height: 260px;
-  object-fit: contain;
-  border-radius: 12px;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-}
-
-.set-modal-title {
-  font-family: 'Arial Black', sans-serif;
-  font-size: 20px;
-  font-weight: 900;
-  color: var(--accent);
-  line-height: 1.2;
-}
-
-.set-modal-meta {
-  font-size: 13px;
-  color: var(--muted);
-  margin-top: 4px;
-}
-
-.set-modal-link {
-  display: block;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 14px 16px;
-  color: var(--cyan);
-  text-decoration: none;
-  font-size: 14px;
-  text-align: center;
-}
-
-.modal-close {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 50%;
-  width: 40px; height: 40px;
-  color: var(--text);
-  font-size: 20px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
- 
+  .candidate-img { width: 80px; height: 80px; object-fit: contain; background: var(--surface2); border-radius: 8px; border: 1px solid var(--border); flex-shrink: 0; }
   .candidate-info { flex: 1; min-width: 0; }
   .candidate-num { font-size: 13px; color: var(--accent); font-weight: 600; }
   .candidate-name { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .candidate-score { font-size: 11px; color: var(--muted); margin-top: 2px; }
 
-  /* ── FOOTER ── */
+  .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 200; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 24px; }
+  .lightbox img { max-width: 100%; max-height: 60vh; object-fit: contain; border-radius: 12px; }
+  .lightbox-name { font-size: 16px; font-weight: 500; text-align: center; color: var(--text); }
+  .lightbox-close { position: absolute; top: 20px; right: 20px; background: var(--surface2); border: 1px solid var(--border); border-radius: 50%; width: 40px; height: 40px; color: var(--text); font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+  .set-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 200; display: flex; flex-direction: column; padding: 24px; gap: 16px; overflow-y: auto; }
+  .set-modal-header { display: flex; justify-content: space-between; align-items: flex-start; }
+  .set-modal img { width: 100%; max-height: 260px; object-fit: contain; border-radius: 12px; background: var(--surface2); border: 1px solid var(--border); }
+  .set-modal-title { font-family: 'Arial Black', sans-serif; font-size: 20px; font-weight: 900; color: var(--accent); line-height: 1.2; }
+  .set-modal-meta { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .set-modal-link { display: block; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; color: var(--cyan); text-decoration: none; font-size: 14px; text-align: center; }
+  .modal-close { background: var(--surface2); border: 1px solid var(--border); border-radius: 50%; width: 40px; height: 40px; color: var(--text); font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
   footer { padding: 16px 20px; text-align: center; font-size: 11px; color: var(--muted); letter-spacing: 0.5px; }
 
-  /* ── LOADING OVERLAY ── */
-  .loading-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(10,10,15,0.85);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    z-index: 100;
-    backdrop-filter: blur(4px);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s;
-  }
-
+  .loading-overlay { position: fixed; inset: 0; background: rgba(10,10,15,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; z-index: 100; backdrop-filter: blur(4px); opacity: 0; pointer-events: none; transition: opacity 0.2s; }
   .loading-overlay.visible { opacity: 1; pointer-events: all; }
-
-  .loading-overlay .big-spinner {
-    width: 48px; height: 48px;
-    border: 3px solid var(--border);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-  }
-
-  .loading-overlay p {
-    font-family: 'Arial Black', sans-serif;
-    font-size: 16px;
-    letter-spacing: 2px;
-    color: var(--muted);
-  }
+  .loading-overlay .big-spinner { width: 48px; height: 48px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  .loading-overlay p { font-family: 'Arial Black', sans-serif; font-size: 16px; letter-spacing: 2px; color: var(--muted); }
 </style>
 </head>
 <body>
@@ -554,55 +147,39 @@
 </div>
 
 <header>
-  <!-- Mini logo SVG -->
   <svg class="logo-svg" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-    <!-- Legs -->
     <rect x="34" y="82" width="18" height="28" rx="4" fill="#1565C0"/>
     <rect x="56" y="82" width="18" height="28" rx="4" fill="#1565C0"/>
-    <!-- Boots -->
     <rect x="30" y="100" width="24" height="10" rx="3" fill="#0D47A1"/>
     <rect x="54" y="100" width="24" height="10" rx="3" fill="#0D47A1"/>
-    <!-- Torso -->
     <rect x="26" y="52" width="60" height="36" rx="6" fill="#1976D2"/>
-    <!-- Panel -->
     <rect x="34" y="58" width="42" height="22" rx="4" fill="#0D47A1"/>
-    <!-- Core -->
     <circle cx="55" cy="69" r="9" fill="#00C8FF" opacity="0.9"/>
     <circle cx="55" cy="69" r="5" fill="#fff" opacity="0.95"/>
     <circle cx="55" cy="69" r="3" fill="#00C8FF"/>
-    <!-- Left arm -->
     <rect x="8"  y="54" width="16" height="30" rx="6" fill="#1976D2"/>
     <rect x="5"  y="78" width="20" height="12" rx="4" fill="#1565C0"/>
-    <!-- Right arm -->
     <rect x="86" y="54" width="16" height="28" rx="6" fill="#1976D2"/>
-    <!-- Cannon -->
     <rect x="82" y="76" width="32" height="16" rx="5" fill="#1565C0"/>
     <rect x="106" y="72" width="10" height="24" rx="4" fill="#0D47A1"/>
     <circle cx="111" cy="84" r="6" fill="none" stroke="#00C8FF" stroke-width="2" opacity="0.9"/>
     <circle cx="111" cy="84" r="3" fill="#00C8FF" opacity="0.7"/>
     <circle cx="118" cy="84" r="2" fill="#FFD600"/>
-    <!-- Neck -->
     <rect x="46" y="44" width="18" height="10" rx="3" fill="#1565C0"/>
-    <!-- Head -->
     <rect x="28" y="18" width="54" height="30" rx="5" fill="#1976D2"/>
-    <!-- Studs -->
     <circle cx="42" cy="20" r="5" fill="#1565C0"/>
     <circle cx="42" cy="20" r="3" fill="#1976D2"/>
     <circle cx="55" cy="20" r="5" fill="#1565C0"/>
     <circle cx="55" cy="20" r="3" fill="#1976D2"/>
     <circle cx="68" cy="20" r="5" fill="#1565C0"/>
     <circle cx="68" cy="20" r="3" fill="#1976D2"/>
-    <!-- Brim -->
     <rect x="24" y="26" width="62" height="6" rx="3" fill="#1565C0"/>
-    <!-- Visor -->
     <rect x="32" y="33" width="46" height="12" rx="4" fill="#001F5B"/>
-    <!-- Eyes -->
     <rect x="36" y="35" width="12" height="8" rx="2" fill="#FFD600" opacity="0.9"/>
     <rect x="62" y="35" width="12" height="8" rx="2" fill="#FFD600" opacity="0.9"/>
-    <rect x="40" y="37" width="5"  height="5" rx="1" fill="#FF6D00"/>
-    <rect x="66" y="37" width="5"  height="5" rx="1" fill="#FF6D00"/>
+    <rect x="40" y="37" width="5" height="5" rx="1" fill="#FF6D00"/>
+    <rect x="66" y="37" width="5" height="5" rx="1" fill="#FF6D00"/>
   </svg>
-
   <div class="logo-text-block">
     <div class="logo-title">
       <span class="yellow">MEGA</span> <span class="cyan">BRICK</span> <span class="yellow">FINDER</span>
@@ -612,8 +189,6 @@
 </header>
 
 <main>
-
-  <!-- Camera Card -->
   <div class="camera-card">
     <div id="preview-area">
       <div class="corner tl"></div>
@@ -627,41 +202,26 @@
       <img id="captured-img" alt="Captured part">
     </div>
     <div class="btn-row">
-      <button class="primary" onclick="document.getElementById('file-input').click()">
-        📷 Take Photo
-      </button>
+      <button class="primary" onclick="document.getElementById('file-input').click()">📷 Take Photo</button>
       <button onclick="clearImage()">✕ Clear</button>
     </div>
   </div>
 
   <input type="file" id="file-input" accept="image/*" capture="environment">
-
-  <!-- Identify Button -->
-  <button id="identify-btn" disabled onclick="identifyPart()">
-    🔍 IDENTIFY PART
-  </button>
-
-  <!-- Divider -->
+  <button id="identify-btn" disabled onclick="identifyPart()">🔍 IDENTIFY PART</button>
   <div class="divider">or enter manually</div>
-
-  <!-- Manual Input -->
   <div class="manual-row">
     <input type="text" id="manual-input" placeholder="Part number (e.g. 3001)" autocomplete="off" autocorrect="off" spellcheck="false">
     <button onclick="manualLookup()">→</button>
   </div>
-
-  <!-- Status -->
   <div id="status"></div>
-
-  <!-- Results -->
   <div id="results"></div>
-
 </main>
 
 <footer>Powered by Brickognize &amp; Rebrickable</footer>
 
 <script>
-const SHEETS_API  = 'https://script.google.com/macros/s/AKfycbwWY3esy4NF6Ejt1n91NPPdX-qiXvCfGqpwddxbtuV2KbDKO_Yp0CdUrE1e0zI82K3F/exec';
+const SHEETS_API = 'https://script.google.com/macros/s/AKfycbwWY3esy4NF6Ejt1n91NPPdX-qiXvCfGqpwddxbtuV2KbDKO_Yp0CdUrE1e0zI82K3F/exec';
 const RB_API_KEY = 'ca9806a231f7e5c7b07d05d39c4651f2';
 
 let capturedFile = null;
@@ -675,9 +235,7 @@ document.getElementById('file-input').addEventListener('change', function(e) {
   const file = e.target.files[0];
   if (!file) return;
   capturedFile = file;
-  const url = URL.createObjectURL(file);
-  const img = document.getElementById('captured-img');
-  img.src = url;
+  document.getElementById('captured-img').src = URL.createObjectURL(file);
   document.getElementById('preview-area').classList.add('has-image');
   document.getElementById('identify-btn').disabled = false;
   clearResults();
@@ -697,9 +255,9 @@ async function loadInventory() {
       fetch(`${SHEETS_API}?action=getSets`)
     ]);
     partsInventory = await partsRes.json();
-    setsInventory  = await setsRes.json();
+    setsInventory = await setsRes.json();
     inventoryLoaded = true;
-  } catch (e) {
+  } catch(e) {
     console.error('Failed to load inventory:', e);
   }
 }
@@ -725,12 +283,11 @@ async function loadColors() {
       url = data.next ? data.next + `&key=${RB_API_KEY}` : null;
     }
     colorsLoaded = true;
-    console.log(`Loaded ${totalLoaded} LEGO colors`);
   } catch(e) {
     console.error('Failed to load colors:', e);
   }
 }
- 
+
 function clearImage() {
   capturedFile = null;
   document.getElementById('captured-img').src = '';
@@ -744,69 +301,20 @@ async function identifyPart() {
   if (!capturedFile) return;
   showLoading('IDENTIFYING PART...');
   try {
-    // Compress image before sending
     const formData = new FormData();
-    const renamed = new File([capturedFile], 'image.jpg', { type: 'image/jpeg' });
-    formData.append('query_image', renamed);
+    formData.append('query_image', new File([capturedFile], 'image.jpg', { type: 'image/jpeg' }));
     const res = await fetch('https://api.brickognize.com/predict/', { method: 'POST', body: formData });
-    if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(`Brickognize error: ${res.status} — ${errText}`);
-    }
+    if (!res.ok) throw new Error(`Brickognize error: ${res.status} — ${await res.text()}`);
     const data = await res.json();
     hideLoading();
-    if (!data.items || data.items.length === 0) {
-      showStatus('No parts identified. Try a clearer photo.', 'error');
-      return;
-    }
+    if (!data.items || data.items.length === 0) { showStatus('No parts identified. Try a clearer photo.', 'error'); return; }
     const items = data.items;
-    if (items.length === 1 || items[0].score > 0.85) {
-      await showPartResult(items[0]);
-    } else {
-      showCandidates(items.slice(0, 5));
-    }
-  } catch (e) {
+    if (items.length === 1 || items[0].score > 0.85) { await showPartResult(items[0]); }
+    else { showCandidates(items.slice(0, 5)); }
+  } catch(e) {
     hideLoading();
     showStatus(`Error: ${e.message}`, 'error');
   }
-}
-
-function compressImage(file, maxSize, quality) {
-  return new Promise((resolve) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-      const canvas = document.createElement('canvas');
-      let w = img.width, h = img.height;
-      if (w > h && w > maxSize) { h = h * maxSize / w; w = maxSize; }
-      else if (h > maxSize) { w = w * maxSize / h; h = maxSize; }
-      canvas.width = w;
-      canvas.height = h;
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      canvas.toBlob(resolve, 'image/jpeg', quality);
-    };
-    img.src = url;
-  });
-}
- 
-function compressImage(file, maxSize, quality) {
-  return new Promise((resolve) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-      const canvas = document.createElement('canvas');
-      let w = img.width, h = img.height;
-      if (w > h && w > maxSize) { h = h * maxSize / w; w = maxSize; }
-      else if (h > maxSize) { w = w * maxSize / h; h = maxSize; }
-      canvas.width = w;
-      canvas.height = h;
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      canvas.toBlob(resolve, 'image/jpeg', quality);
-    };
-    img.src = url;
-  });
 }
 
 async function manualLookup() {
@@ -814,8 +322,8 @@ async function manualLookup() {
   if (!partNum) return;
   showLoading('LOOKING UP PART...');
   try {
-   const res = await fetch(`https://rebrickable.com/api/v3/lego/parts/${partNum}/?key=${RB_API_KEY}`);
-   if (!res.ok) throw new Error('Part not found on Rebrickable');
+    const res = await fetch(`https://rebrickable.com/api/v3/lego/parts/${partNum}/?key=${RB_API_KEY}`);
+    if (!res.ok) throw new Error('Part not found on Rebrickable');
     const part = await res.json();
     hideLoading();
     await showPartResult({ id: part.part_num, name: part.name, img_url: part.part_img_url, score: 1 });
@@ -835,22 +343,16 @@ function showCandidates(items) {
   items.forEach(item => {
     const btn = document.createElement('button');
     btn.className = 'candidate-btn';
-    const scorePercent = Math.round((item.score || 0) * 100);
     btn.innerHTML = `
       <img class="candidate-img" src="${item.img_url || ''}" onerror="this.style.display='none'" alt="">
       <div class="candidate-info">
         <div class="candidate-num">${item.id}</div>
         <div class="candidate-name">${item.name || ''}</div>
-        <div class="candidate-score">${scorePercent}% confidence</div>
+        <div class="candidate-score">${Math.round((item.score || 0) * 100)}% confidence</div>
       </div>
       <div style="font-size:18px;color:var(--muted);padding-left:8px;">›</div>
     `;
-    // Tap image = lightbox, tap rest = select
-    const img = btn.querySelector('img');
-    img.addEventListener('click', (e) => {
-      e.stopPropagation();
-      showLightbox(item.img_url, item.name);
-    });
+    btn.querySelector('img').addEventListener('click', (e) => { e.stopPropagation(); showLightbox(item.img_url, item.name); });
     btn.addEventListener('click', () => showPartResult(item));
     card.appendChild(btn);
   });
@@ -860,97 +362,61 @@ function showCandidates(items) {
 function getDominantColor(imgElement) {
   try {
     const canvas = document.createElement('canvas');
-    const size = 100;
-    canvas.width = size;
-    canvas.height = size;
+    canvas.width = 100; canvas.height = 100;
     const ctx = canvas.getContext('2d');
-    ctx.drawImage(imgElement, 0, 0, size, size);
-    
-    // Sample pixels from the center region (avoid background edges)
-    const centerX = size * 0.25, centerY = size * 0.25;
-    const centerW = size * 0.5, centerH = size * 0.5;
-    const data = ctx.getImageData(centerX, centerY, centerW, centerH).data;
-    
-    // Average the RGB values
+    ctx.drawImage(imgElement, 0, 0, 100, 100);
+    const data = ctx.getImageData(25, 25, 50, 50).data;
     let r = 0, g = 0, b = 0, count = 0;
     for (let i = 0; i < data.length; i += 4) {
-      // Skip near-white (background) and near-black pixels
-      const pr = data[i], pg = data[i+1], pb = data[i+2];
-      const brightness = (pr + pg + pb) / 3;
+      const brightness = (data[i] + data[i+1] + data[i+2]) / 3;
       if (brightness > 240 || brightness < 15) continue;
-      r += pr; g += pg; b += pb; count++;
+      r += data[i]; g += data[i+1]; b += data[i+2]; count++;
     }
     if (count === 0) return null;
     return { r: Math.round(r/count), g: Math.round(g/count), b: Math.round(b/count) };
-  } catch(e) {
-    return null;
-  }
+  } catch(e) { return null; }
 }
 
 function matchLegoColor(rgb, availableColors) {
   if (!rgb || !colorsLoaded) return null;
-
-  let bestMatch = null;
-  let bestDistance = Infinity;
-
+  let bestMatch = null, bestDistance = Infinity;
   availableColors.forEach(colorName => {
     const known = legoColorMap[colorName];
     if (!known) return;
-    const dist = Math.sqrt(
-      Math.pow(rgb.r - known.r, 2) +
-      Math.pow(rgb.g - known.g, 2) +
-      Math.pow(rgb.b - known.b, 2)
-    );
-    if (dist < bestDistance) {
-      bestDistance = dist;
-      bestMatch = colorName;
-    }
+    const dist = Math.sqrt(Math.pow(rgb.r-known.r,2) + Math.pow(rgb.g-known.g,2) + Math.pow(rgb.b-known.b,2));
+    if (dist < bestDistance) { bestDistance = dist; bestMatch = colorName; }
   });
- 
-  return bestDistance < 150 ? { color: bestMatch, confidence: Math.round((1 - bestDistance/150) * 100) } : null;}
+  return bestDistance < 150 ? { color: bestMatch, confidence: Math.round((1 - bestDistance/150) * 100) } : null;
+}
 
 function legoColorToHex(colorName) {
   const c = legoColorMap[colorName];
-  if (c) return `rgb(${c.r},${c.g},${c.b})`;
-  return '#888888';
+  return c ? `rgb(${c.r},${c.g},${c.b})` : '#888888';
 }
 
 async function showPartResult(item) {
   clearResults();
-  if (!inventoryLoaded) {
-    showLoading('LOADING INVENTORY...');
-    await loadInventory();
-    hideLoading();
-  }
+  if (!inventoryLoaded) { showLoading('LOADING INVENTORY...'); await loadInventory(); hideLoading(); }
+
   const partNum = item.id;
   const scorePercent = item.score < 1 ? Math.round(item.score * 100) + '%' : null;
 
-  // Get all matches first
   const allMatches = partsInventory.filter(p =>
     p['Part Number'] && p['Part Number'].toString().toLowerCase() === partNum.toString().toLowerCase()
   );
 
-  // Try color detection from captured image
   let detectedColor = null;
   if (capturedFile) {
     const tempImg = new Image();
-    await new Promise(resolve => {
-      tempImg.onload = resolve;
-      tempImg.src = URL.createObjectURL(capturedFile);
-    });
+    await new Promise(resolve => { tempImg.onload = resolve; tempImg.src = URL.createObjectURL(capturedFile); });
     const availableColors = [...new Set(allMatches.map(m => m['Color']))];
-    const rgb = getDominantColor(tempImg);
-    detectedColor = matchLegoColor(rgb, availableColors);
+    detectedColor = matchLegoColor(getDominantColor(tempImg), availableColors);
   }
 
-// Always show all matches, color filter is manual
-  const matches = allMatches;
-
   const bySet = {};
-  matches.forEach(m => {
-    const sn = m['Set Number'];
-    if (!bySet[sn]) bySet[sn] = [];
-    bySet[sn].push(m);
+  allMatches.forEach(m => {
+    if (!bySet[m['Set Number']]) bySet[m['Set Number']] = [];
+    bySet[m['Set Number']].push(m);
   });
 
   const setNameMap = {};
@@ -966,9 +432,16 @@ async function showPartResult(item) {
     ? `<img class="part-img" src="${item.img_url}" alt="${item.name || ''}" onerror="this.parentElement.innerHTML='<div class=\\'part-img-placeholder\\'>🧱</div>'">`
     : `<div class="part-img-placeholder">🧱</div>`;
 
-  const scoreBadge = scorePercent ? `<div class="score-badge">${scorePercent}</div>` : '';
+  const colorBar = detectedColor ? `
+    <div style="padding:10px 16px;border-top:1px solid var(--border);font-size:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <span style="color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Detected:</span>
+      <span class="color-swatch" style="background:${legoColorToHex(detectedColor.color)}"></span>
+      <span style="color:var(--text);font-weight:600;">${detectedColor.color}</span>
+      <button onclick="filterByColor('${detectedColor.color}')" style="margin-left:auto;background:var(--accent);border:none;border-radius:6px;color:#000;font-size:11px;font-weight:700;padding:4px 10px;cursor:pointer;">Filter by this color</button>
+    </div>` : '';
 
   const setCount = Object.keys(bySet).length;
+
   card.innerHTML = `
     <div class="part-header">
       ${imgHtml}
@@ -977,31 +450,29 @@ async function showPartResult(item) {
         <div class="part-name">${item.name || 'Unknown part'}</div>
         <div class="part-meta"><a href="https://rebrickable.com/parts/${partNum}/" target="_blank" style="color:var(--muted);text-decoration:none;">View on Rebrickable ↗</a></div>
       </div>
-      ${scoreBadge}
+      ${scorePercent ? `<div class="score-badge">${scorePercent}</div>` : ''}
     </div>
- ${detectedColor ? `
-     <div style="padding:10px 16px;border-top:1px solid var(--border);font-size:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-       <span style="color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Detected:</span>
-       <span class="color-swatch" style="background:${legoColorToHex(detectedColor.color)}"></span>
-       <span style="color:var(--text);font-weight:600;">${detectedColor.color}</span>
-       <button onclick="filterByColor('${detectedColor.color}')" style="margin-left:auto;background:var(--accent);border:none;border-radius:6px;color:#000;font-size:11px;font-weight:700;padding:4px 10px;cursor:pointer;">Filter by this color</button>
-     </div>` : ''}
+    ${colorBar}
+    <div class="sets-label">Found in ${setCount} set(s) in your collection</div>
+  `;
 
   if (setCount === 0) {
     card.innerHTML += `<div class="no-sets">This part isn't in any of your sets.</div>`;
   } else {
     Object.entries(bySet).forEach(([setNum, parts]) => {
       const setName = setNameMap[setNum] || setNum;
-      const colors = [...new Set(parts.map(p => p['Color']))].join(', ');
+      const colorSwatches = [...new Set(parts.map(p => p['Color']))].map(color =>
+        `<span class="color-swatch" style="background:${legoColorToHex(color)}" title="${color}"></span><span style="font-size:12px;color:var(--muted);margin-right:8px;">${color}</span>`
+      ).join('');
       const totalQty = parts.reduce((sum, p) => sum + (parseInt(p['Quantity']) || 0), 0);
       const row = document.createElement('div');
       row.className = 'set-row';
-      row.style.cursor = 'pointer';
       row.innerHTML = `
         <div class="set-dot"></div>
         <div class="set-info">
           <div class="set-name">${setName}</div>
-          <div class="set-detail">${setNum} · ${colors}</div>
+          <div class="set-detail" style="margin-top:2px;">${setNum}</div>
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin-top:4px;">${colorSwatches}</div>
         </div>
         <div class="set-qty">×${totalQty}</div>
         <div style="font-size:18px;color:var(--muted);padding-left:8px;">›</div>
@@ -1018,8 +489,7 @@ function filterByColor(colorName) {
   const partNum = document.querySelector('.part-num')?.textContent;
   if (!partNum) return;
   const filtered = partsInventory.filter(p =>
-    p['Part Number'] && p['Part Number'].toString().toLowerCase() === partNum.toLowerCase()
-    && p['Color'] === colorName
+    p['Part Number'] && p['Part Number'].toString().toLowerCase() === partNum.toLowerCase() && p['Color'] === colorName
   );
   const setNameMap = {};
   setsInventory.forEach(s => { setNameMap[s['Set Number']] = s['Name']; });
@@ -1029,17 +499,13 @@ function filterByColor(colorName) {
     bySet[m['Set Number']].push(m);
   });
 
-  // Update the sets section
   const card = document.querySelector('.part-card');
   const setsLabel = card.querySelector('.sets-label');
   setsLabel.textContent = `Found in ${Object.keys(bySet).length} set(s) — filtered by ${colorName}`;
-
-  // Remove existing set rows
   card.querySelectorAll('.set-row').forEach(r => r.remove());
+  const existing = card.querySelector('[data-filter-bar]');
+  if (existing) existing.remove();
 
-  // Remove existing filter bar and replace with "show all" option
-  const filterBar = card.querySelector('[data-filter-bar]');
-  if (filterBar) filterBar.remove();
   const showAllBar = document.createElement('div');
   showAllBar.setAttribute('data-filter-bar', '1');
   showAllBar.style.cssText = 'padding:10px 16px;border-top:1px solid var(--border);font-size:12px;display:flex;align-items:center;gap:8px;';
@@ -1058,19 +524,18 @@ function filterByColor(colorName) {
   } else {
     Object.entries(bySet).forEach(([setNum, parts]) => {
       const setName = setNameMap[setNum] || setNum;
-      const colors = [...new Set(parts.map(p => p['Color']))].map(color =>
+      const colorSwatches = [...new Set(parts.map(p => p['Color']))].map(color =>
         `<span class="color-swatch" style="background:${legoColorToHex(color)}" title="${color}"></span><span style="font-size:12px;color:var(--muted);margin-right:8px;">${color}</span>`
       ).join('');
       const totalQty = parts.reduce((sum, p) => sum + (parseInt(p['Quantity']) || 0), 0);
       const row = document.createElement('div');
       row.className = 'set-row';
-      row.style.cursor = 'pointer';
       row.innerHTML = `
         <div class="set-dot"></div>
         <div class="set-info">
           <div class="set-name">${setName}</div>
-          <div class="set-detail" style="margin-top:4px;">${setNum}</div>
-          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin-top:4px;">${colors}</div>
+          <div class="set-detail" style="margin-top:2px;">${setNum}</div>
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin-top:4px;">${colorSwatches}</div>
         </div>
         <div class="set-qty">×${totalQty}</div>
         <div style="font-size:18px;color:var(--muted);padding-left:8px;">›</div>
@@ -1084,18 +549,14 @@ function filterByColor(colorName) {
 function showAllColorsForPart(partNum) {
   const savedFile = capturedFile;
   capturedFile = null;
-  const name = document.querySelector('.part-name')?.textContent;
-  const img = document.querySelector('.part-img')?.src;
-  showPartResult({ id: partNum, name, img_url: img, score: 1 });
+  showPartResult({ id: partNum, name: document.querySelector('.part-name')?.textContent, img_url: document.querySelector('.part-img')?.src, score: 1 });
   capturedFile = savedFile;
 }
- 
+
 function showStatus(msg, type = '') {
   const el = document.getElementById('status');
   el.className = `visible ${type}`;
-  el.innerHTML = type === 'loading'
-    ? `<div class="spinner"></div><span>${msg}</span>`
-    : `<span>${msg}</span>`;
+  el.innerHTML = type === 'loading' ? `<div class="spinner"></div><span>${msg}</span>` : `<span>${msg}</span>`;
 }
 
 function clearResults() {
@@ -1113,21 +574,17 @@ function hideLoading() {
   document.getElementById('loading-overlay').classList.remove('visible');
 }
 
- // ── BACK BUTTON HANDLING ─────────────────────────────────────────────────────
 window.addEventListener('popstate', () => {
-  // Close any open modal/lightbox on back button
   const lightbox = document.querySelector('.lightbox');
   const setModal = document.querySelector('.set-modal');
   if (lightbox) { lightbox.remove(); return; }
   if (setModal) { setModal.remove(); return; }
 });
 
-function pushModalState() {
-  history.pushState({ modal: true }, '');
-}
- 
- function showLightbox(imgUrl, name) {
-    pushModalState(); // ← add this
+function pushModalState() { history.pushState({ modal: true }, ''); }
+
+function showLightbox(imgUrl, name) {
+  pushModalState();
   const lb = document.createElement('div');
   lb.className = 'lightbox';
   lb.innerHTML = `
@@ -1157,22 +614,18 @@ async function showSetModal(setNum, setName) {
   document.body.appendChild(modal);
 
   try {
-    const res = await fetch(`https://rebrickable.com/api/v3/lego/sets/${setNum}/`, {
-      headers: { 'Authorization': `key ${RB_API_KEY}` }
-    });
+    const res = await fetch(`https://rebrickable.com/api/v3/lego/sets/${setNum}/?key=${RB_API_KEY}`);
     if (!res.ok) throw new Error(`API error: ${res.status}`);
     const set = await res.json();
-    const rebrickableUrl = `https://rebrickable.com/sets/${setNum}/`;
     document.getElementById('set-modal-body').innerHTML = `
       <img src="${set.set_img_url || ''}" alt="${set.name || setName}" onerror="this.style.display='none'">
       <div style="font-size:14px;color:var(--muted);">${set.year || ''} · ${set.num_parts || ''} parts</div>
-      <a class="set-modal-link" href="${rebrickableUrl}" target="_blank">View on Rebrickable ↗</a>
+      <a class="set-modal-link" href="https://rebrickable.com/sets/${setNum}/" target="_blank">View on Rebrickable ↗</a>
     `;
   } catch(e) {
     document.getElementById('set-modal-body').innerHTML = `<span style="color:#ff6b6b">Could not load set details: ${e.message}</span>`;
   }
 }
- 
 </script>
 </body>
 </html>
