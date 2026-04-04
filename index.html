@@ -706,20 +706,26 @@ async function loadInventory() {
 
 async function loadColors() {
   try {
-    const res = await fetch(`https://rebrickable.com/api/v3/lego/colors/?page_size=200&key=${RB_API_KEY}`);
-    const data = await res.json();
-    data.results.forEach(color => {
-      if (color.rgb) {
-        const hex = color.rgb;
-        legoColorMap[color.name] = {
-          r: parseInt(hex.substring(0,2), 16),
-          g: parseInt(hex.substring(2,4), 16),
-          b: parseInt(hex.substring(4,6), 16)
-        };
-      }
-    });
+    let url = `https://rebrickable.com/api/v3/lego/colors/?page_size=200&key=${RB_API_KEY}`;
+    let totalLoaded = 0;
+    while (url) {
+      const res = await fetch(url);
+      const data = await res.json();
+      data.results.forEach(color => {
+        if (color.rgb) {
+          const hex = color.rgb;
+          legoColorMap[color.name] = {
+            r: parseInt(hex.substring(0,2), 16),
+            g: parseInt(hex.substring(2,4), 16),
+            b: parseInt(hex.substring(4,6), 16)
+          };
+        }
+      });
+      totalLoaded += data.results.length;
+      url = data.next ? data.next + `&key=${RB_API_KEY}` : null;
+    }
     colorsLoaded = true;
-    console.log(`Loaded ${Object.keys(legoColorMap).length} LEGO colors`);
+    console.log(`Loaded ${totalLoaded} LEGO colors`);
   } catch(e) {
     console.error('Failed to load colors:', e);
   }
