@@ -946,10 +946,8 @@ async function showPartResult(item) {
     console.log('Available colors:', availableColors);
   }
 
-  // Filter by detected color, fall back to all matches
-  const matches = detectedColor
-    ? allMatches.filter(m => m['Color'] === detectedColor.color)
-    : allMatches;
+// Always show all matches, color filter is manual
+  const matches = allMatches;
 
   const bySet = {};
   matches.forEach(m => {
@@ -1019,19 +1017,81 @@ async function showPartResult(item) {
   results.appendChild(card);
 }
 
-function showAllColors() {
-  // Re-run showPartResult but skip color filtering
-  const currentPartNum = document.querySelector('.part-num')?.textContent;
-  if (!currentPartNum) return;
-  const allMatches = partsInventory.filter(p =>
-    p['Part Number'] && p['Part Number'].toString().toLowerCase() === currentPartNum.toLowerCase()
+function filterByColor(colorName) {
+  const partNum = document.querySelector('.part-num')?.textContent;
+  if (!partNum) return;
+  const filtered = partsInventory.filter(p =>
+    p['Part Number'] && p['Part Number'].toString().toLowerCase() === partNum.toLowerCase()
+    && p['Color'] === colorName
   );
-  // Temporarily null capturedFile to skip color detection
+  const setNameMap = {};
+  setsInventory.forEach(s => { setNameMap[s['Set Number']] = s['Name']; });
+  const bySet = {};
+  filtered.forEach(m => {
+    if (!bySet[m['Set Number']]) bySet[m['Set Number']] = [];
+    bySet[m['Set Number']].push(m);
+  });
+
+  // Update the sets section
+  const card = document.querySelector('.part-card');
+  const setsLabel = card.querySelector('.sets-label');
+  setsLabel.textContent = `Found in ${Object.keys(bySet).length} set(s) — filtered by ${colorName}`;
+
+  // Remove existing set rows
+  card.querySelectorAll('.set-row').forEach(r => r.remove());
+
+  // Remove existing filter bar and replace with "show all" option
+  const filterBar = card.querySelector('[data-filter-bar]');
+  if (filterBar) filterBar.remove();
+  const showAllBar = document.createElement('div');
+  showAllBar.setAttribute('data-filter-bar', '1');
+  showAllBar.style.cssText = 'padding:10px 16px;border-top:1px solid var(--border);font-size:12px;display:flex;align-items:center;gap:8px;';
+  showAllBar.innerHTML = `
+    <span class="color-swatch" style="background:${legoColorToHex(colorName)}"></span>
+    <span style="color:var(--text);font-weight:600;">${colorName}</span>
+    <button onclick="showAllColorsForPart('${partNum}')" style="margin-left:auto;background:none;border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:11px;padding:4px 10px;cursor:pointer;">Show all colors</button>
+  `;
+  setsLabel.after(showAllBar);
+
+  if (Object.keys(bySet).length === 0) {
+    const noSets = document.createElement('div');
+    noSets.className = 'no-sets';
+    noSets.textContent = `No sets found with this part in ${colorName}.`;
+    card.appendChild(noSets);
+  } else {
+    Object.entries(bySet).forEach(([setNum, parts]) => {
+      const setName = setNameMap[setNum] || setNum;
+      const colors = [...new Set(parts.map(p => p['Color']))].map(color =>
+        `<span class="color-swatch" style="background:${legoColorToHex(color)}" title="${color}"></span><span style="font-size:12px;color:var(--muted);margin-right:8px;">${color}</span>`
+      ).join('');
+      const totalQty = parts.reduce((sum, p) => sum + (parseInt(p['Quantity']) || 0), 0);
+      const row = document.createElement('div');
+      row.className = 'set-row';
+      row.style.cursor = 'pointer';
+      row.innerHTML = `
+        <div class="set-dot"></div>
+        <div class="set-info">
+          <div class="set-name">${setName}</div>
+          <div class="set-detail" style="margin-top:4px;">${setNum}</div>
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin-top:4px;">${colors}</div>
+        </div>
+        <div class="set-qty">×${totalQty}</div>
+        <div style="font-size:18px;color:var(--muted);padding-left:8px;">›</div>
+      `;
+      row.addEventListener('click', () => showSetModal(setNum, setName));
+      card.appendChild(row);
+    });
+  }
+}
+
+function showAllColorsForPart(partNum) {
   const savedFile = capturedFile;
   capturedFile = null;
-  showPartResult({ id: currentPartNum, name: document.querySelector('.part-name')?.textContent, img_url: document.querySelector('.part-img')?.src, score: 1 });
+  const name = document.querySelector('.part-name')?.textContent;
+  const img = document.querySelector('.part-img')?.src;
+  showPartResult({ id: partNum, name, img_url: img, score: 1 });
   capturedFile = savedFile;
-} 
+}
  
 function showStatus(msg, type = '') {
   const el = document.getElementById('status');
