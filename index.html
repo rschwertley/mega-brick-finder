@@ -813,8 +813,15 @@ function showCandidates(items) {
         <div class="candidate-name">${item.name || ''}</div>
         <div class="candidate-score">${scorePercent}% confidence</div>
       </div>
+      <div style="font-size:18px;color:var(--muted);padding-left:8px;">›</div>
     `;
-    btn.onclick = () => showPartResult(item);
+    // Tap image = lightbox, tap rest = select
+    const img = btn.querySelector('img');
+    img.addEventListener('click', (e) => {
+      e.stopPropagation();
+      showLightbox(item.img_url, item.name);
+    });
+    btn.addEventListener('click', () => showPartResult(item));
     card.appendChild(btn);
   });
   results.appendChild(card);
