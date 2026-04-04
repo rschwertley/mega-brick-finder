@@ -826,6 +826,102 @@ function showCandidates(items) {
   results.appendChild(card);
 }
 
+function getDominantColor(imgElement) {
+  try {
+    const canvas = document.createElement('canvas');
+    const size = 100;
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(imgElement, 0, 0, size, size);
+    
+    // Sample pixels from the center region (avoid background edges)
+    const centerX = size * 0.25, centerY = size * 0.25;
+    const centerW = size * 0.5, centerH = size * 0.5;
+    const data = ctx.getImageData(centerX, centerY, centerW, centerH).data;
+    
+    // Average the RGB values
+    let r = 0, g = 0, b = 0, count = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      // Skip near-white (background) and near-black pixels
+      const pr = data[i], pg = data[i+1], pb = data[i+2];
+      const brightness = (pr + pg + pb) / 3;
+      if (brightness > 240 || brightness < 15) continue;
+      r += pr; g += pg; b += pb; count++;
+    }
+    if (count === 0) return null;
+    return { r: Math.round(r/count), g: Math.round(g/count), b: Math.round(b/count) };
+  } catch(e) {
+    return null;
+  }
+}
+
+function matchLegoColor(rgb, availableColors) {
+  if (!rgb) return null;
+
+  // LEGO color name → approximate RGB
+  const legoColors = {
+    'Black': {r:33,g:33,b:33},
+    'White': {r:242,g:243,b:242},
+    'Light Bluish Gray': {r:171,g:173,b:172},
+    'Dark Bluish Gray': {r:108,g:110,b:104},
+    'Red': {r:196,g:40,b:27},
+    'Blue': {r:13,g:105,b:171},
+    'Yellow': {r:245,g:205,b:47},
+    'Green': {r:75,g:151,b:74},
+    'Orange': {r:254,g:138,b:24},
+    'Dark Orange': {r:169,g:85,b:10},
+    'Brown': {r:88,g:57,b:39},
+    'Tan': {r:222,g:198,b:156},
+    'Dark Tan': {r:138,g:114,b:78},
+    'Lime': {r:165,g:202,b:24},
+    'Medium Blue': {r:115,g:150,b:200},
+    'Dark Blue': {r:20,g:48,b:100},
+    'Dark Green': {r:39,g:70,b:44},
+    'Magenta': {r:144,g:31,b:95},
+    'Pink': {r:252,g:185,b:193},
+    'Purple': {r:107,g:50,b:124},
+    'Dark Purple': {r:63,g:24,b:99},
+    'Bright Pink': {r:228,g:173,b:200},
+    'Medium Lavender': {r:160,g:110,b:185},
+    'Lavender': {r:205,g:164,b:222},
+    'Sand Blue': {r:112,g:142,b:169},
+    'Sand Green': {r:120,g:144,b:129},
+    'Dark Red': {r:114,g:14,b:15},
+    'Coral': {r:255,g:109,b:90},
+    'Nougat': {r:204,g:142,b:104},
+    'Medium Nougat': {r:175,g:116,b:70},
+    'Trans-Clear': {r:236,g:236,b:236},
+    'Trans-Red': {r:196,g:40,b:27},
+    'Trans-Blue': {r:13,g:105,b:171},
+    'Trans-Yellow': {r:245,g:205,b:47},
+    'Trans-Green': {r:75,g:151,b:74},
+    'Trans-Orange': {r:254,g:138,b:24},
+  };
+
+  // Only match against colors actually in the user's inventory
+  let bestMatch = null;
+  let bestDistance = Infinity;
+
+  availableColors.forEach(colorName => {
+    // Find closest LEGO color definition
+    const known = legoColors[colorName];
+    if (!known) return;
+    const dist = Math.sqrt(
+      Math.pow(rgb.r - known.r, 2) +
+      Math.pow(rgb.g - known.g, 2) +
+      Math.pow(rgb.b - known.b, 2)
+    );
+    if (dist < bestDistance) {
+      bestDistance = dist;
+      bestMatch = colorName;
+    }
+  });
+
+  // Only return a match if we're reasonably confident (distance < 120)
+  return bestDistance < 120 ? { color: bestMatch, confidence: Math.round((1 - bestDistance/120) * 100) } : null;
+}
+ 
 async function showPartResult(item) {
   clearResults();
   if (!inventoryLoaded) {
@@ -836,9 +932,28 @@ async function showPartResult(item) {
   const partNum = item.id;
   const scorePercent = item.score < 1 ? Math.round(item.score * 100) + '%' : null;
 
-  const matches = partsInventory.filter(p =>
+  // Get all matches first
+  const allMatches = partsInventory.filter(p =>
     p['Part Number'] && p['Part Number'].toString().toLowerCase() === partNum.toString().toLowerCase()
   );
+
+  // Try color detection from captured image
+  let detectedColor = null;
+  if (capturedFile) {
+    const tempImg = new Image();
+    await new Promise(resolve => {
+      tempImg.onload = resolve;
+      tempImg.src = URL.createObjectURL(capturedFile);
+    });
+    const availableColors = [...new Set(allMatches.map(m => m['Color']))];
+    const rgb = getDominantColor(tempImg);
+    detectedColor = matchLegoColor(rgb, availableColors);
+  }
+
+  // Filter by detected color, fall back to all matches
+  const matches = detectedColor
+    ? allMatches.filter(m => m['Color'] === detectedColor.color)
+    : allMatches;
 
   const bySet = {};
   matches.forEach(m => {
@@ -873,8 +988,14 @@ async function showPartResult(item) {
       </div>
       ${scoreBadge}
     </div>
-    <div class="sets-label">Found in ${setCount} set(s) in your collection</div>
-  `;
+  ${detectedColor ? `
+    <div style="padding:10px 16px;border-top:1px solid var(--border);font-size:12px;display:flex;align-items:center;gap:10px;">
+      <span style="color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Detected color</span>
+      <span style="color:var(--accent);font-weight:600;">${detectedColor.color}</span>
+      <span style="color:var(--muted)">${detectedColor.confidence}% confidence</span>
+      <button onclick="showAllColors()" style="margin-left:auto;background:none;border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:11px;padding:3px 8px;cursor:pointer;">Show all colors</button>
+    </div>` : ''}
+    <div class="sets-label">Found in ${setCount} set(s) in your collection</div>`;
 
   if (setCount === 0) {
     card.innerHTML += `<div class="no-sets">This part isn't in any of your sets.</div>`;
@@ -903,6 +1024,20 @@ async function showPartResult(item) {
   results.appendChild(card);
 }
 
+function showAllColors() {
+  // Re-run showPartResult but skip color filtering
+  const currentPartNum = document.querySelector('.part-num')?.textContent;
+  if (!currentPartNum) return;
+  const allMatches = partsInventory.filter(p =>
+    p['Part Number'] && p['Part Number'].toString().toLowerCase() === currentPartNum.toLowerCase()
+  );
+  // Temporarily null capturedFile to skip color detection
+  const savedFile = capturedFile;
+  capturedFile = null;
+  showPartResult({ id: currentPartNum, name: document.querySelector('.part-name')?.textContent, img_url: document.querySelector('.part-img')?.src, score: 1 });
+  capturedFile = savedFile;
+} 
+ 
 function showStatus(msg, type = '') {
   const el = document.getElementById('status');
   el.className = `visible ${type}`;
