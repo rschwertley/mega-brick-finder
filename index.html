@@ -906,9 +906,8 @@ function matchLegoColor(rgb, availableColors) {
       bestMatch = colorName;
     }
   });
-
-  return bestDistance < 100 ? { color: bestMatch, confidence: Math.round((1 - bestDistance/100) * 100) } : null;
-}
+ 
+  return bestDistance < 150 ? { color: bestMatch, confidence: Math.round((1 - bestDistance/150) * 100) } : null;}
 
 function legoColorToHex(colorName) {
   const c = legoColorMap[colorName];
