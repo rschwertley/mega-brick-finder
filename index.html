@@ -783,8 +783,8 @@ async function manualLookup() {
   if (!partNum) return;
   showLoading('LOOKING UP PART...');
   try {
-    const res = await fetch(`https://rebrickable.com/api/v3/lego/sets/${setNum}/?key=${RB_API_KEY}`);
-    if (!res.ok) throw new Error('Part not found on Rebrickable');
+   const res = await fetch(`https://rebrickable.com/api/v3/lego/parts/${partNum}/?key=${RB_API_KEY}`);
+   if (!res.ok) throw new Error('Part not found on Rebrickable');
     const part = await res.json();
     hideLoading();
     await showPartResult({ id: part.part_num, name: part.name, img_url: part.part_img_url, score: 1 });
