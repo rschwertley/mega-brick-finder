@@ -600,10 +600,15 @@ async function identifyPart() {
   if (!capturedFile) return;
   showLoading('IDENTIFYING PART...');
   try {
+    // Compress image before sending
+    const compressed = await compressImage(capturedFile, 800, 0.8);
     const formData = new FormData();
-    formData.append('query_image', capturedFile);
+    formData.append('query_image', compressed, 'part.jpg');
     const res = await fetch('https://api.brickognize.com/predict/', { method: 'POST', body: formData });
-    if (!res.ok) throw new Error(`Brickognize error: ${res.status}`);
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`Brickognize error: ${res.status} — ${errText}`);
+    }
     const data = await res.json();
     hideLoading();
     if (!data.items || data.items.length === 0) {
@@ -620,6 +625,25 @@ async function identifyPart() {
     hideLoading();
     showStatus(`Error: ${e.message}`, 'error');
   }
+}
+
+function compressImage(file, maxSize, quality) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const canvas = document.createElement('canvas');
+      let w = img.width, h = img.height;
+      if (w > h && w > maxSize) { h = h * maxSize / w; w = maxSize; }
+      else if (h > maxSize) { w = w * maxSize / h; h = maxSize; }
+      canvas.width = w;
+      canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      canvas.toBlob(resolve, 'image/jpeg', quality);
+    };
+    img.src = url;
+  });
 }
 
 async function manualLookup() {
