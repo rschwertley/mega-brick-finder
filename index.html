@@ -448,9 +448,13 @@ async function showPartResult(item) {
       <div class="part-info">
         <div class="part-num">${partNum}</div>
         <div class="part-name">${item.name || 'Unknown part'}</div>
-        <div class="part-meta" style="display:flex;gap:12px;">
-          <a href="https://rebrickable.com/parts/${partNum}/" target="_blank" rel="noopener noreferrer" style="color:var(--muted);text-decoration:none;">Rebrickable ↗</a>
-          <a href="https://www.bricklink.com/v2/catalog/catalogitem.page?P=${partNum}" target="_blank" rel="noopener noreferrer" style="color:var(--muted);text-decoration:none;">BrickLink ↗</a>
+        <div class="part-meta" style="display:flex;gap:12px;flex-wrap:wrap;">
+          ${(item.external_sites && item.external_sites.length > 0)
+            ? item.external_sites.map(site =>
+                `<a href="${site.url}" target="_blank" rel="noopener noreferrer" style="color:var(--muted);text-decoration:none;">${site.name} ↗</a>`
+              ).join('')
+            : `<a href="https://www.bricklink.com/v2/search.page?q=${partNum}" target="_blank" rel="noopener noreferrer" style="color:var(--muted);text-decoration:none;">Search on BrickLink ↗</a>`
+          }
         </div>
       </div>
       ${scorePercent ? `<div class="score-badge">${scorePercent}</div>` : ''}
