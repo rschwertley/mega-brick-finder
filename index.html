@@ -448,7 +448,10 @@ async function showPartResult(item) {
       <div class="part-info">
         <div class="part-num">${partNum}</div>
         <div class="part-name">${item.name || 'Unknown part'}</div>
-        <div class="part-meta"><a href="https://rebrickable.com/parts/${partNum}/" target="_blank" style="color:var(--muted);text-decoration:none;">View on Rebrickable ↗</a></div>
+        <div class="part-meta" style="display:flex;gap:12px;">
+          <a href="https://rebrickable.com/parts/${partNum}/" target="_blank" rel="noopener noreferrer" style="color:var(--muted);text-decoration:none;">Rebrickable ↗</a>
+          <a href="https://www.bricklink.com/v2/catalog/catalogitem.page?P=${partNum}" target="_blank" rel="noopener noreferrer" style="color:var(--muted);text-decoration:none;">BrickLink ↗</a>
+        </div>
       </div>
       ${scorePercent ? `<div class="score-badge">${scorePercent}</div>` : ''}
     </div>
