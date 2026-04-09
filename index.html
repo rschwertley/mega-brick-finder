@@ -94,9 +94,9 @@
   .part-info { flex: 1; min-width: 0; }
   .part-num { font-family: 'Arial Black', sans-serif; font-size: 20px; font-weight: 900; letter-spacing: 1px; color: var(--accent); line-height: 1; }
   .part-name { font-size: 14px; color: var(--text); margin-top: 4px; line-height: 1.3; }
+  .part-alias { font-size: 11px; color: var(--muted); margin-top: 3px; }
   .part-meta { font-size: 12px; color: var(--muted); margin-top: 6px; display: flex; gap: 12px; flex-wrap: wrap; }
   .part-meta a { color: var(--muted); text-decoration: none; }
-  .part-meta a:hover { color: var(--text); }
   .score-badge { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 4px 10px; font-size: 12px; color: var(--accent); font-weight: 600; flex-shrink: 0; align-self: flex-start; }
 
   .sets-label { padding: 12px 16px 10px; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); font-weight: 600; border-top: 1px solid var(--border); }
@@ -133,7 +133,6 @@
   .set-modal-link { display: block; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; color: var(--cyan); text-decoration: none; font-size: 14px; text-align: center; }
   .modal-close { background: var(--surface2); border: 1px solid var(--border); border-radius: 50%; width: 40px; height: 40px; color: var(--text); font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 
-  /* Exit confirmation dialog */
   .exit-dialog { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 300; display: flex; align-items: center; justify-content: center; padding: 24px; }
   .exit-dialog-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; max-width: 300px; width: 100%; text-align: center; }
   .exit-dialog-title { font-family: 'Arial Black', sans-serif; font-size: 18px; font-weight: 900; color: var(--text); margin-bottom: 8px; }
@@ -248,18 +247,13 @@ window.addEventListener('beforeunload', function(e) {
   e.returnValue = '';
 });
 
-// Push an initial state so we have something to pop back to
 history.pushState({ app: true }, '');
 
 window.addEventListener('popstate', function(e) {
   const lightbox = document.querySelector('.lightbox');
   const setModal = document.querySelector('.set-modal');
-
-  // If a modal is open, close it
   if (lightbox) { lightbox.remove(); history.pushState({ app: true }, ''); return; }
   if (setModal) { setModal.remove(); history.pushState({ app: true }, ''); return; }
-
-  // Otherwise show exit confirmation
   showExitDialog();
 });
 
@@ -328,7 +322,6 @@ async function loadInventory() {
 async function loadColors() {
   try {
     let url = `https://rebrickable.com/api/v3/lego/colors/?page_size=200&key=${RB_API_KEY}`;
-    let totalLoaded = 0;
     while (url) {
       const res = await fetch(url);
       const data = await res.json();
@@ -342,13 +335,35 @@ async function loadColors() {
           };
         }
       });
-      totalLoaded += data.results.length;
       url = data.next ? data.next + `&key=${RB_API_KEY}` : null;
     }
     colorsLoaded = true;
   } catch(e) {
     console.error('Failed to load colors:', e);
   }
+}
+
+// ── RESOLVE CANONICAL PART ────────────────────────────────────────────────────
+// Fetches the canonical part info from Rebrickable for a given part number.
+// Returns { part, canonicalNum } or null if not found.
+async function resolveCanonicalPart(partNum) {
+  try {
+    const res = await fetch(`https://rebrickable.com/api/v3/lego/parts/${partNum}/?key=${RB_API_KEY}`);
+    if (res.ok) {
+      const part = await res.json();
+      return { part, canonicalNum: part.part_num };
+    }
+    // Try search as fallback
+    const searchRes = await fetch(`https://rebrickable.com/api/v3/lego/parts/?search=${partNum}&key=${RB_API_KEY}`);
+    if (searchRes.ok) {
+      const data = await searchRes.json();
+      if (data.results && data.results.length > 0) {
+        const part = data.results[0];
+        return { part, canonicalNum: part.part_num };
+      }
+    }
+  } catch(e) {}
+  return null;
 }
 
 // ── CAMERA ────────────────────────────────────────────────────────────────────
@@ -388,18 +403,20 @@ async function manualLookup() {
   if (!partNum) return;
   showLoading('LOOKING UP PART...');
   try {
-    const res = await fetch(`https://rebrickable.com/api/v3/lego/parts/${partNum}/?key=${RB_API_KEY}`);
-    if (!res.ok) throw new Error('Part not found on Rebrickable');
-    const part = await res.json();
+    const resolved = await resolveCanonicalPart(partNum);
+    if (!resolved) throw new Error(`Part ${partNum} not found`);
+    const { part, canonicalNum } = resolved;
     hideLoading();
     await showPartResult({
-      id: part.part_num,
+      id: canonicalNum,
       name: part.name,
       img_url: part.part_img_url,
       score: 1,
+      original_id: partNum !== canonicalNum ? partNum : null,
+      alternate_ids: partNum !== canonicalNum ? [partNum, canonicalNum] : [canonicalNum],
       external_sites: [
-        { name: 'Rebrickable', url: part.part_url || `https://rebrickable.com/parts/${part.part_num}/` },
-        { name: 'BrickLink', url: `https://www.bricklink.com/v2/search.page?q=${part.part_num}` }
+        { name: 'Rebrickable', url: part.part_url || `https://rebrickable.com/parts/${canonicalNum}/` },
+        { name: 'BrickLink', url: `https://www.bricklink.com/v2/search.page?q=${canonicalNum}` }
       ]
     });
   } catch(e) {
@@ -479,10 +496,31 @@ async function showPartResult(item) {
   const partNum = item.id;
   const scorePercent = item.score < 1 ? Math.round(item.score * 100) + '%' : null;
 
-  const allMatches = partsInventory.filter(p =>
-    p['Part Number'] && p['Part Number'].toString().toLowerCase() === partNum.toString().toLowerCase()
+  // Search inventory with known part numbers
+  let searchNums = (item.alternate_ids || [partNum]).map(n => n.toString().toLowerCase());
+  let allMatches = partsInventory.filter(p =>
+    p['Part Number'] && searchNums.includes(p['Part Number'].toString().toLowerCase())
   );
 
+  // If no matches found, try resolving to canonical part number in parallel with showing results
+  if (allMatches.length === 0 && !item.alternate_ids) {
+    const resolved = await resolveCanonicalPart(partNum);
+    if (resolved && resolved.canonicalNum !== partNum) {
+      const canonicalLower = resolved.canonicalNum.toLowerCase();
+      const canonicalMatches = partsInventory.filter(p =>
+        p['Part Number'] && p['Part Number'].toString().toLowerCase() === canonicalLower
+      );
+      if (canonicalMatches.length > 0) {
+        allMatches = canonicalMatches;
+        item.original_id = partNum;
+        item.id = resolved.canonicalNum;
+        item.name = item.name || resolved.part.name;
+        item.img_url = item.img_url || resolved.part.part_img_url;
+      }
+    }
+  }
+
+  // Color detection from captured image
   let detectedColor = null;
   if (capturedFile) {
     const tempImg = new Image();
@@ -510,9 +548,9 @@ async function showPartResult(item) {
     ? `<img class="part-img" src="${item.img_url}" alt="${item.name || ''}" onerror="this.parentElement.innerHTML='<div class=\\'part-img-placeholder\\'>🧱</div>'">`
     : `<div class="part-img-placeholder">🧱</div>`;
 
-  // Build external links — Rebrickable always shown, plus any from Brickognize
+  // Build external links
   const externalLinks = [];
-  externalLinks.push(`<a href="https://rebrickable.com/parts/${partNum}/" target="_blank" rel="noopener noreferrer">Rebrickable ↗</a>`);
+  externalLinks.push(`<a href="https://rebrickable.com/parts/${item.id}/" target="_blank" rel="noopener noreferrer">Rebrickable ↗</a>`);
   if (item.external_sites && item.external_sites.length > 0) {
     item.external_sites.forEach(site => {
       if (site.name.toLowerCase() !== 'rebrickable') {
@@ -520,7 +558,7 @@ async function showPartResult(item) {
       }
     });
   } else {
-    externalLinks.push(`<a href="https://www.bricklink.com/v2/search.page?q=${partNum}" target="_blank" rel="noopener noreferrer">BrickLink ↗</a>`);
+    externalLinks.push(`<a href="https://www.bricklink.com/v2/search.page?q=${item.id}" target="_blank" rel="noopener noreferrer">BrickLink ↗</a>`);
   }
 
   const colorBar = detectedColor ? `
@@ -537,8 +575,9 @@ async function showPartResult(item) {
     <div class="part-header">
       ${imgHtml}
       <div class="part-info">
-        <div class="part-num">${partNum}</div>
+        <div class="part-num">${item.id}</div>
         <div class="part-name">${item.name || 'Unknown part'}</div>
+        ${item.original_id ? `<div class="part-alias">Also known as: ${item.original_id}</div>` : ''}
         <div class="part-meta">${externalLinks.join('')}</div>
       </div>
       ${scorePercent ? `<div class="score-badge">${scorePercent}</div>` : ''}
