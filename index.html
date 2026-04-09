@@ -94,7 +94,9 @@
   .part-info { flex: 1; min-width: 0; }
   .part-num { font-family: 'Arial Black', sans-serif; font-size: 20px; font-weight: 900; letter-spacing: 1px; color: var(--accent); line-height: 1; }
   .part-name { font-size: 14px; color: var(--text); margin-top: 4px; line-height: 1.3; }
-  .part-meta { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .part-meta { font-size: 12px; color: var(--muted); margin-top: 6px; display: flex; gap: 12px; flex-wrap: wrap; }
+  .part-meta a { color: var(--muted); text-decoration: none; }
+  .part-meta a:hover { color: var(--text); }
   .score-badge { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 4px 10px; font-size: 12px; color: var(--accent); font-weight: 600; flex-shrink: 0; align-self: flex-start; }
 
   .sets-label { padding: 12px 16px 10px; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); font-weight: 600; border-top: 1px solid var(--border); }
@@ -130,6 +132,15 @@
   .set-modal-meta { font-size: 13px; color: var(--muted); margin-top: 4px; }
   .set-modal-link { display: block; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; color: var(--cyan); text-decoration: none; font-size: 14px; text-align: center; }
   .modal-close { background: var(--surface2); border: 1px solid var(--border); border-radius: 50%; width: 40px; height: 40px; color: var(--text); font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+  /* Exit confirmation dialog */
+  .exit-dialog { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 300; display: flex; align-items: center; justify-content: center; padding: 24px; }
+  .exit-dialog-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; max-width: 300px; width: 100%; text-align: center; }
+  .exit-dialog-title { font-family: 'Arial Black', sans-serif; font-size: 18px; font-weight: 900; color: var(--text); margin-bottom: 8px; }
+  .exit-dialog-msg { font-size: 14px; color: var(--muted); margin-bottom: 20px; line-height: 1.4; }
+  .exit-dialog-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .exit-btn-stay { background: var(--accent); border: none; border-radius: 10px; padding: 12px; font-family: 'Arial Black', sans-serif; font-size: 14px; font-weight: 900; color: #000; cursor: pointer; }
+  .exit-btn-leave { background: none; border: 1px solid var(--border); border-radius: 10px; padding: 12px; font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--muted); cursor: pointer; }
 
   footer { padding: 16px 20px; text-align: center; font-size: 11px; color: var(--muted); letter-spacing: 0.5px; }
 
@@ -231,6 +242,56 @@ let inventoryLoaded = false;
 let legoColorMap = {};
 let colorsLoaded = false;
 
+// ── EXIT CONFIRMATION ─────────────────────────────────────────────────────────
+window.addEventListener('beforeunload', function(e) {
+  e.preventDefault();
+  e.returnValue = '';
+});
+
+// Push an initial state so we have something to pop back to
+history.pushState({ app: true }, '');
+
+window.addEventListener('popstate', function(e) {
+  const lightbox = document.querySelector('.lightbox');
+  const setModal = document.querySelector('.set-modal');
+
+  // If a modal is open, close it
+  if (lightbox) { lightbox.remove(); history.pushState({ app: true }, ''); return; }
+  if (setModal) { setModal.remove(); history.pushState({ app: true }, ''); return; }
+
+  // Otherwise show exit confirmation
+  showExitDialog();
+});
+
+function showExitDialog() {
+  const dialog = document.createElement('div');
+  dialog.className = 'exit-dialog';
+  dialog.id = 'exit-dialog';
+  dialog.innerHTML = `
+    <div class="exit-dialog-box">
+      <div class="exit-dialog-title">Leave Mega Brick Finder?</div>
+      <div class="exit-dialog-msg">Your current scan will be lost if you leave.</div>
+      <div class="exit-dialog-btns">
+        <button class="exit-btn-stay" onclick="stayInApp()">Stay</button>
+        <button class="exit-btn-leave" onclick="leaveApp()">Leave</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(dialog);
+}
+
+function stayInApp() {
+  const dialog = document.getElementById('exit-dialog');
+  if (dialog) dialog.remove();
+  history.pushState({ app: true }, '');
+}
+
+function leaveApp() {
+  window.removeEventListener('beforeunload', function() {});
+  history.back();
+}
+
+// ── FILE INPUT ────────────────────────────────────────────────────────────────
 document.getElementById('file-input').addEventListener('change', function(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -248,6 +309,7 @@ document.getElementById('manual-input').addEventListener('keydown', function(e) 
 loadInventory();
 loadColors();
 
+// ── INVENTORY ─────────────────────────────────────────────────────────────────
 async function loadInventory() {
   try {
     const [partsRes, setsRes] = await Promise.all([
@@ -262,6 +324,7 @@ async function loadInventory() {
   }
 }
 
+// ── COLORS ────────────────────────────────────────────────────────────────────
 async function loadColors() {
   try {
     let url = `https://rebrickable.com/api/v3/lego/colors/?page_size=200&key=${RB_API_KEY}`;
@@ -288,6 +351,7 @@ async function loadColors() {
   }
 }
 
+// ── CAMERA ────────────────────────────────────────────────────────────────────
 function clearImage() {
   capturedFile = null;
   document.getElementById('captured-img').src = '';
@@ -297,6 +361,7 @@ function clearImage() {
   clearResults();
 }
 
+// ── IDENTIFY ──────────────────────────────────────────────────────────────────
 async function identifyPart() {
   if (!capturedFile) return;
   showLoading('IDENTIFYING PART...');
@@ -317,6 +382,7 @@ async function identifyPart() {
   }
 }
 
+// ── MANUAL LOOKUP ─────────────────────────────────────────────────────────────
 async function manualLookup() {
   const partNum = document.getElementById('manual-input').value.trim();
   if (!partNum) return;
@@ -326,13 +392,23 @@ async function manualLookup() {
     if (!res.ok) throw new Error('Part not found on Rebrickable');
     const part = await res.json();
     hideLoading();
-    await showPartResult({ id: part.part_num, name: part.name, img_url: part.part_img_url, score: 1 });
+    await showPartResult({
+      id: part.part_num,
+      name: part.name,
+      img_url: part.part_img_url,
+      score: 1,
+      external_sites: [
+        { name: 'Rebrickable', url: part.part_url || `https://rebrickable.com/parts/${part.part_num}/` },
+        { name: 'BrickLink', url: `https://www.bricklink.com/v2/search.page?q=${part.part_num}` }
+      ]
+    });
   } catch(e) {
     hideLoading();
     showStatus(`${e.message}`, 'error');
   }
 }
 
+// ── CANDIDATES ────────────────────────────────────────────────────────────────
 function showCandidates(items) {
   clearResults();
   const results = document.getElementById('results');
@@ -359,6 +435,7 @@ function showCandidates(items) {
   results.appendChild(card);
 }
 
+// ── COLOR DETECTION ───────────────────────────────────────────────────────────
 function getDominantColor(imgElement) {
   try {
     const canvas = document.createElement('canvas');
@@ -394,6 +471,7 @@ function legoColorToHex(colorName) {
   return c ? `rgb(${c.r},${c.g},${c.b})` : '#888888';
 }
 
+// ── PART RESULT ───────────────────────────────────────────────────────────────
 async function showPartResult(item) {
   clearResults();
   if (!inventoryLoaded) { showLoading('LOADING INVENTORY...'); await loadInventory(); hideLoading(); }
@@ -432,6 +510,19 @@ async function showPartResult(item) {
     ? `<img class="part-img" src="${item.img_url}" alt="${item.name || ''}" onerror="this.parentElement.innerHTML='<div class=\\'part-img-placeholder\\'>🧱</div>'">`
     : `<div class="part-img-placeholder">🧱</div>`;
 
+  // Build external links — Rebrickable always shown, plus any from Brickognize
+  const externalLinks = [];
+  externalLinks.push(`<a href="https://rebrickable.com/parts/${partNum}/" target="_blank" rel="noopener noreferrer">Rebrickable ↗</a>`);
+  if (item.external_sites && item.external_sites.length > 0) {
+    item.external_sites.forEach(site => {
+      if (site.name.toLowerCase() !== 'rebrickable') {
+        externalLinks.push(`<a href="${site.url}" target="_blank" rel="noopener noreferrer">${site.name} ↗</a>`);
+      }
+    });
+  } else {
+    externalLinks.push(`<a href="https://www.bricklink.com/v2/search.page?q=${partNum}" target="_blank" rel="noopener noreferrer">BrickLink ↗</a>`);
+  }
+
   const colorBar = detectedColor ? `
     <div style="padding:10px 16px;border-top:1px solid var(--border);font-size:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
       <span style="color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Detected:</span>
@@ -448,14 +539,7 @@ async function showPartResult(item) {
       <div class="part-info">
         <div class="part-num">${partNum}</div>
         <div class="part-name">${item.name || 'Unknown part'}</div>
-        <div class="part-meta" style="display:flex;gap:12px;flex-wrap:wrap;">
-          ${(item.external_sites && item.external_sites.length > 0)
-            ? item.external_sites.map(site =>
-                `<a href="${site.url}" target="_blank" rel="noopener noreferrer" style="color:var(--muted);text-decoration:none;">${site.name} ↗</a>`
-              ).join('')
-            : `<a href="https://www.bricklink.com/v2/search.page?q=${partNum}" target="_blank" rel="noopener noreferrer" style="color:var(--muted);text-decoration:none;">Search on BrickLink ↗</a>`
-          }
-        </div>
+        <div class="part-meta">${externalLinks.join('')}</div>
       </div>
       ${scorePercent ? `<div class="score-badge">${scorePercent}</div>` : ''}
     </div>
@@ -492,6 +576,7 @@ async function showPartResult(item) {
   results.appendChild(card);
 }
 
+// ── COLOR FILTER ──────────────────────────────────────────────────────────────
 function filterByColor(colorName) {
   const partNum = document.querySelector('.part-num')?.textContent;
   if (!partNum) return;
@@ -560,6 +645,7 @@ function showAllColorsForPart(partNum) {
   capturedFile = savedFile;
 }
 
+// ── HELPERS ───────────────────────────────────────────────────────────────────
 function showStatus(msg, type = '') {
   const el = document.getElementById('status');
   el.className = `visible ${type}`;
@@ -581,28 +667,23 @@ function hideLoading() {
   document.getElementById('loading-overlay').classList.remove('visible');
 }
 
-window.addEventListener('popstate', () => {
-  const lightbox = document.querySelector('.lightbox');
-  const setModal = document.querySelector('.set-modal');
-  if (lightbox) { lightbox.remove(); return; }
-  if (setModal) { setModal.remove(); return; }
-});
-
 function pushModalState() { history.pushState({ modal: true }, ''); }
 
+// ── LIGHTBOX ──────────────────────────────────────────────────────────────────
 function showLightbox(imgUrl, name) {
   pushModalState();
   const lb = document.createElement('div');
   lb.className = 'lightbox';
   lb.innerHTML = `
-    <button class="lightbox-close" onclick="this.parentElement.remove()">✕</button>
+    <button class="lightbox-close" onclick="this.parentElement.remove();history.pushState({app:true},'')">✕</button>
     <img src="${imgUrl}" alt="${name || ''}">
     <div class="lightbox-name">${name || ''}</div>
   `;
-  lb.addEventListener('click', (e) => { if (e.target === lb) lb.remove(); });
+  lb.addEventListener('click', (e) => { if (e.target === lb) { lb.remove(); history.pushState({app:true},''); } });
   document.body.appendChild(lb);
 }
 
+// ── SET MODAL ─────────────────────────────────────────────────────────────────
 async function showSetModal(setNum, setName) {
   pushModalState();
   const modal = document.createElement('div');
@@ -613,11 +694,11 @@ async function showSetModal(setNum, setName) {
         <div class="set-modal-title">${setName}</div>
         <div class="set-modal-meta">${setNum}</div>
       </div>
-      <button class="modal-close" onclick="this.closest('.set-modal').remove()">✕</button>
+      <button class="modal-close" onclick="this.closest('.set-modal').remove();history.pushState({app:true},'')">✕</button>
     </div>
     <div id="set-modal-body" style="color:var(--muted);font-size:14px;">Loading...</div>
   `;
-  modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+  modal.addEventListener('click', (e) => { if (e.target === modal) { modal.remove(); history.pushState({app:true},''); } });
   document.body.appendChild(modal);
 
   try {
@@ -627,7 +708,7 @@ async function showSetModal(setNum, setName) {
     document.getElementById('set-modal-body').innerHTML = `
       <img src="${set.set_img_url || ''}" alt="${set.name || setName}" onerror="this.style.display='none'">
       <div style="font-size:14px;color:var(--muted);">${set.year || ''} · ${set.num_parts || ''} parts</div>
-      <a class="set-modal-link" href="https://rebrickable.com/sets/${setNum}/" target="_blank">View on Rebrickable ↗</a>
+      <a class="set-modal-link" href="https://rebrickable.com/sets/${setNum}/" target="_blank" rel="noopener noreferrer">View on Rebrickable ↗</a>
     `;
   } catch(e) {
     document.getElementById('set-modal-body').innerHTML = `<span style="color:#ff6b6b">Could not load set details: ${e.message}</span>`;
