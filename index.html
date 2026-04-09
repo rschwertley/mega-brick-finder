@@ -281,8 +281,10 @@ function stayInApp() {
 }
 
 function leaveApp() {
-  window.removeEventListener('beforeunload', function() {});
-  history.back();
+  window.onbeforeunload = null;
+  const dialog = document.getElementById('exit-dialog');
+  if (dialog) dialog.remove();
+  window.location.href = 'about:blank';
 }
 
 // ── FILE INPUT ────────────────────────────────────────────────────────────────
