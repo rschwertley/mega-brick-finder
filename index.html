@@ -353,13 +353,19 @@ async function resolveCanonicalPart(partNum) {
       const part = await res.json();
       return { part, canonicalNum: part.part_num };
     }
-    // Try search as fallback
+    const blRes = await fetch(`https://rebrickable.com/api/v3/lego/parts/?bricklink_id=${partNum}&key=${RB_API_KEY}`);
+    if (blRes.ok) {
+      const blData = await blRes.json();
+      if (blData.results && blData.results.length > 0) {
+        const part = blData.results[0];
+        return { part, canonicalNum: part.part_num };
+      }
+    }
     const searchRes = await fetch(`https://rebrickable.com/api/v3/lego/parts/?search=${partNum}&key=${RB_API_KEY}`);
     if (searchRes.ok) {
       const data = await searchRes.json();
       if (data.results && data.results.length > 0) {
-        const part = data.results[0];
-        return { part, canonicalNum: part.part_num };
+        return { part: data.results[0], canonicalNum: data.results[0].part_num };
       }
     }
   } catch(e) {}
