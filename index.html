@@ -240,12 +240,7 @@ let setsInventory = [];
 let inventoryLoaded = false;
 let legoColorMap = {};
 let colorsLoaded = false;
-
-// ── EXIT CONFIRMATION ─────────────────────────────────────────────────────────
-window.addEventListener('beforeunload', function(e) {
-  e.preventDefault();
-  e.returnValue = '';
-});
+let blockExit = true;
 
 history.pushState({ app: true }, '');
 
@@ -254,7 +249,7 @@ window.addEventListener('popstate', function(e) {
   const setModal = document.querySelector('.set-modal');
   if (lightbox) { lightbox.remove(); history.pushState({ app: true }, ''); return; }
   if (setModal) { setModal.remove(); history.pushState({ app: true }, ''); return; }
-  showExitDialog();
+  if (blockExit) showExitDialog();
 });
 
 function showExitDialog() {
@@ -281,10 +276,10 @@ function stayInApp() {
 }
 
 function leaveApp() {
-  window.onbeforeunload = null;
+  blockExit = false;
   const dialog = document.getElementById('exit-dialog');
   if (dialog) dialog.remove();
-  window.location.href = 'about:blank';
+  history.back();
 }
 
 // ── FILE INPUT ────────────────────────────────────────────────────────────────
