@@ -279,7 +279,7 @@ function leaveApp() {
   blockExit = false;
   const dialog = document.getElementById('exit-dialog');
   if (dialog) dialog.remove();
-  history.back();
+  history.go(-2);
 }
 
 // ── FILE INPUT ────────────────────────────────────────────────────────────────
