@@ -113,13 +113,6 @@
   .set-modal-meta { font-size: 13px; color: var(--muted); margin-top: 4px; }
   .set-modal-link { display: block; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; color: var(--cyan); text-decoration: none; font-size: 14px; text-align: center; }
   .modal-close { background: var(--surface2); border: 1px solid var(--border); border-radius: 50%; width: 40px; height: 40px; color: var(--text); font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .exit-dialog { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 300; display: flex; align-items: center; justify-content: center; padding: 24px; }
-  .exit-dialog-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; max-width: 300px; width: 100%; text-align: center; }
-  .exit-dialog-title { font-family: 'Arial Black', sans-serif; font-size: 18px; font-weight: 900; color: var(--text); margin-bottom: 8px; }
-  .exit-dialog-msg { font-size: 14px; color: var(--muted); margin-bottom: 20px; line-height: 1.4; }
-  .exit-dialog-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .exit-btn-stay { background: var(--accent); border: none; border-radius: 10px; padding: 12px; font-family: 'Arial Black', sans-serif; font-size: 14px; font-weight: 900; color: #000; cursor: pointer; }
-  .exit-btn-leave { background: none; border: 1px solid var(--border); border-radius: 10px; padding: 12px; font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--muted); cursor: pointer; }
   footer { padding: 16px 20px; text-align: center; font-size: 11px; color: var(--muted); letter-spacing: 0.5px; }
   .loading-overlay { position: fixed; inset: 0; background: rgba(10,10,15,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; z-index: 100; backdrop-filter: blur(4px); opacity: 0; pointer-events: none; transition: opacity 0.2s; }
   .loading-overlay.visible { opacity: 1; pointer-events: all; }
@@ -208,7 +201,7 @@ let setsInventory = [];
 let inventoryLoaded = false;
 let legoColorMap = {};
 let colorsLoaded = false;
-let blockExit = true;
+let lastBackPress = 0;
 
 // ── EXIT HANDLING ─────────────────────────────────────────────────────────────
 history.pushState({ app: true }, '');
@@ -218,43 +211,34 @@ window.addEventListener('popstate', function() {
   const setModal = document.querySelector('.set-modal');
   if (lightbox) { lightbox.remove(); history.pushState({ app: true }, ''); return; }
   if (setModal) { setModal.remove(); history.pushState({ app: true }, ''); return; }
-  if (blockExit) {
-    history.pushState({ app: true }, '');
-    showExitDialog();
+
+  const now = Date.now();
+  if (now - lastBackPress < 2000) {
+    // Second back press within 2 seconds — let it exit naturally
+    return;
   }
+  // First back press — show toast and push state back
+  lastBackPress = now;
+  history.pushState({ app: true }, '');
+  showExitToast();
 });
 
-function showExitDialog() {
-  if (document.getElementById('exit-dialog')) return;
-  const dialog = document.createElement('div');
-  dialog.className = 'exit-dialog';
-  dialog.id = 'exit-dialog';
-  dialog.innerHTML = `
-    <div class="exit-dialog-box">
-      <div class="exit-dialog-title">Leave Mega Brick Finder?</div>
-      <div class="exit-dialog-msg">Your current scan will be lost if you leave.</div>
-      <div class="exit-dialog-btns">
-        <button class="exit-btn-stay" onclick="stayInApp()">Stay</button>
-        <button class="exit-btn-leave" onclick="leaveApp()">Leave</button>
-      </div>
-    </div>
+function showExitToast() {
+  const existing = document.getElementById('exit-toast');
+  if (existing) existing.remove();
+  const toast = document.createElement('div');
+  toast.id = 'exit-toast';
+  toast.style.cssText = `
+    position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%);
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); font-family: 'DM Sans', sans-serif;
+    font-size: 14px; padding: 12px 20px; border-radius: 24px;
+    z-index: 300; white-space: nowrap;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
   `;
-  document.body.appendChild(dialog);
-}
-
-function stayInApp() {
-  const dialog = document.getElementById('exit-dialog');
-  if (dialog) dialog.remove();
-}
-
-function leaveApp() {
-  const dialog = document.getElementById('exit-dialog');
-  if (dialog) dialog.remove();
-  blockExit = false;
-  // Try window.close() first (works when opened as PWA)
-  window.close();
-  // Fallback: navigate to blank page
-  setTimeout(() => { window.location.replace('about:blank'); }, 100);
+  toast.textContent = 'Press back again to exit';
+  document.body.appendChild(toast);
+  setTimeout(() => { if (toast.parentNode) toast.remove(); }, 2000);
 }
 
 // ── FILE INPUT ────────────────────────────────────────────────────────────────
@@ -314,13 +298,11 @@ async function loadColors() {
 // ── RESOLVE CANONICAL PART ────────────────────────────────────────────────────
 async function resolveCanonicalPart(partNum) {
   try {
-    // Try direct Rebrickable lookup first
     const res = await fetch(`https://rebrickable.com/api/v3/lego/parts/${partNum}/?key=${RB_API_KEY}`);
     if (res.ok) {
       const part = await res.json();
       return { part, canonicalNum: part.part_num };
     }
-    // Try BrickLink ID mapping — handles old/alternate numbers like 4073 -> 6141
     const blRes = await fetch(`https://rebrickable.com/api/v3/lego/parts/?bricklink_id=${partNum}&key=${RB_API_KEY}`);
     if (blRes.ok) {
       const blData = await blRes.json();
@@ -329,7 +311,6 @@ async function resolveCanonicalPart(partNum) {
         return { part, canonicalNum: part.part_num };
       }
     }
-    // General search as last resort
     const searchRes = await fetch(`https://rebrickable.com/api/v3/lego/parts/?search=${partNum}&key=${RB_API_KEY}`);
     if (searchRes.ok) {
       const data = await searchRes.json();
@@ -470,7 +451,6 @@ async function showPartResult(item) {
     p['Part Number'] && searchNums.includes(p['Part Number'].toString().toLowerCase())
   );
 
-  // If no matches, try resolving to canonical part number
   if (allMatches.length === 0 && !item.alternate_ids) {
     const resolved = await resolveCanonicalPart(partNum);
     if (resolved && resolved.canonicalNum !== partNum) {
