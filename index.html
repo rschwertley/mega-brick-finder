@@ -214,10 +214,8 @@ window.addEventListener('popstate', function() {
 
   const now = Date.now();
   if (now - lastBackPress < 2000) {
-    // Second back press within 2 seconds — let it exit naturally
-    return;
+    return; // Second press within 2 seconds — exit naturally
   }
-  // First back press — show toast and push state back
   lastBackPress = now;
   history.pushState({ app: true }, '');
   showExitToast();
@@ -296,26 +294,39 @@ async function loadColors() {
 }
 
 // ── RESOLVE CANONICAL PART ────────────────────────────────────────────────────
+// Returns { part, canonicalNum, allNums } where allNums includes molds/alternates/prints
 async function resolveCanonicalPart(partNum) {
   try {
-    const res = await fetch(`https://rebrickable.com/api/v3/lego/parts/${partNum}/?key=${RB_API_KEY}`);
+    // Try direct Rebrickable lookup with full part details
+    const res = await fetch(`https://rebrickable.com/api/v3/lego/parts/${partNum}/?inc_part_details=1&key=${RB_API_KEY}`);
     if (res.ok) {
       const part = await res.json();
-      return { part, canonicalNum: part.part_num };
+      const allNums = [part.part_num];
+      if (part.molds) part.molds.forEach(m => allNums.push(m.toString()));
+      if (part.alternates) part.alternates.forEach(a => allNums.push(a.toString()));
+      if (part.print_of) allNums.push(part.print_of.toString());
+      return { part, canonicalNum: part.part_num, allNums };
     }
+    // Try BrickLink ID mapping — handles old/alternate numbers like 4073 -> 6141
     const blRes = await fetch(`https://rebrickable.com/api/v3/lego/parts/?bricklink_id=${partNum}&key=${RB_API_KEY}`);
     if (blRes.ok) {
       const blData = await blRes.json();
       if (blData.results && blData.results.length > 0) {
         const part = blData.results[0];
-        return { part, canonicalNum: part.part_num };
+        const allNums = [part.part_num];
+        if (part.molds) part.molds.forEach(m => allNums.push(m.toString()));
+        if (part.alternates) part.alternates.forEach(a => allNums.push(a.toString()));
+        if (part.print_of) allNums.push(part.print_of.toString());
+        return { part, canonicalNum: part.part_num, allNums };
       }
     }
+    // General search as last resort
     const searchRes = await fetch(`https://rebrickable.com/api/v3/lego/parts/?search=${partNum}&key=${RB_API_KEY}`);
     if (searchRes.ok) {
       const data = await searchRes.json();
       if (data.results && data.results.length > 0) {
-        return { part: data.results[0], canonicalNum: data.results[0].part_num };
+        const part = data.results[0];
+        return { part, canonicalNum: part.part_num, allNums: [part.part_num] };
       }
     }
   } catch(e) {}
@@ -358,7 +369,7 @@ async function manualLookup() {
   try {
     const resolved = await resolveCanonicalPart(partNum);
     if (!resolved) throw new Error(`Part ${partNum} not found`);
-    const { part, canonicalNum } = resolved;
+    const { part, canonicalNum, allNums } = resolved;
     hideLoading();
     await showPartResult({
       id: canonicalNum,
@@ -366,7 +377,7 @@ async function manualLookup() {
       img_url: part.part_img_url,
       score: 1,
       original_id: partNum !== canonicalNum ? partNum : null,
-      alternate_ids: partNum !== canonicalNum ? [partNum, canonicalNum] : [canonicalNum],
+      alternate_ids: allNums,
       external_sites: [
         { name: 'Rebrickable', url: part.part_url || `https://rebrickable.com/parts/${canonicalNum}/` },
         { name: 'BrickLink', url: `https://www.bricklink.com/v2/search.page?q=${canonicalNum}` }
@@ -446,28 +457,27 @@ async function showPartResult(item) {
   const partNum = item.id;
   const scorePercent = item.score < 1 ? Math.round(item.score * 100) + '%' : null;
 
-  let searchNums = (item.alternate_ids || [partNum]).map(n => n.toString().toLowerCase());
-  let allMatches = partsInventory.filter(p =>
+  // Always resolve to get molds/alternates/prints — this ensures we never miss matches
+  const resolved = await resolveCanonicalPart(partNum);
+  const allNums = resolved ? [...new Set([...resolved.allNums, partNum])] : [partNum];
+  if (item.alternate_ids) {
+    item.alternate_ids.forEach(n => { if (!allNums.includes(n.toString())) allNums.push(n.toString()); });
+  }
+  const searchNums = allNums.map(n => n.toString().toLowerCase());
+
+  const allMatches = partsInventory.filter(p =>
     p['Part Number'] && searchNums.includes(p['Part Number'].toString().toLowerCase())
   );
 
-  if (allMatches.length === 0 && !item.alternate_ids) {
-    const resolved = await resolveCanonicalPart(partNum);
-    if (resolved && resolved.canonicalNum !== partNum) {
-      const canonicalLower = resolved.canonicalNum.toLowerCase();
-      const canonicalMatches = partsInventory.filter(p =>
-        p['Part Number'] && p['Part Number'].toString().toLowerCase() === canonicalLower
-      );
-      if (canonicalMatches.length > 0) {
-        allMatches = canonicalMatches;
-        item.original_id = partNum;
-        item.id = resolved.canonicalNum;
-        item.name = item.name || resolved.part.name;
-        item.img_url = item.img_url || resolved.part.part_img_url;
-      }
-    }
+  // Update item details to canonical if resolved to a different number
+  if (resolved && resolved.canonicalNum !== partNum && !item.original_id) {
+    item.original_id = partNum;
+    item.id = resolved.canonicalNum;
+    item.name = item.name || resolved.part.name;
+    item.img_url = item.img_url || resolved.part.part_img_url;
   }
 
+  // Color detection from captured image
   let detectedColor = null;
   if (capturedFile) {
     const tempImg = new Image();
@@ -495,6 +505,7 @@ async function showPartResult(item) {
     ? `<img class="part-img" src="${item.img_url}" alt="${item.name || ''}" onerror="this.parentElement.innerHTML='<div class=\\'part-img-placeholder\\'>🧱</div>'">`
     : `<div class="part-img-placeholder">🧱</div>`;
 
+  // Build external links
   const externalLinks = [];
   externalLinks.push(`<a href="https://rebrickable.com/parts/${item.id}/" target="_blank" rel="noopener noreferrer">Rebrickable ↗</a>`);
   if (item.external_sites && item.external_sites.length > 0) {
@@ -506,6 +517,10 @@ async function showPartResult(item) {
   } else {
     externalLinks.push(`<a href="https://www.bricklink.com/v2/search.page?q=${item.id}" target="_blank" rel="noopener noreferrer">BrickLink ↗</a>`);
   }
+
+  // Show all known alternate numbers
+  const otherNums = allNums.filter(n => n.toLowerCase() !== item.id.toLowerCase());
+  const aliasText = otherNums.length > 0 ? `Also known as: ${otherNums.join(', ')}` : '';
 
   const colorBar = detectedColor ? `
     <div style="padding:10px 16px;border-top:1px solid var(--border);font-size:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
@@ -523,7 +538,7 @@ async function showPartResult(item) {
       <div class="part-info">
         <div class="part-num">${item.id}</div>
         <div class="part-name">${item.name || 'Unknown part'}</div>
-        ${item.original_id ? `<div class="part-alias">Also known as: ${item.original_id}</div>` : ''}
+        ${aliasText ? `<div class="part-alias">${aliasText}</div>` : ''}
         <div class="part-meta">${externalLinks.join('')}</div>
       </div>
       ${scorePercent ? `<div class="score-badge">${scorePercent}</div>` : ''}
