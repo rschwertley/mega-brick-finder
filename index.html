@@ -524,7 +524,7 @@ async function showPartResult(item) {
 
   const colorBar = detectedColor ? `
     <div style="padding:10px 16px;border-top:1px solid var(--border);font-size:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-      <span style="color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Detected:</span>
+      <span style="color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Best color match:</span>
       <span class="color-swatch" style="background:${legoColorToHex(detectedColor.color)}"></span>
       <span style="color:var(--text);font-weight:600;">${detectedColor.color}</span>
       <button onclick="filterByColor('${detectedColor.color}')" style="margin-left:auto;background:var(--accent);border:none;border-radius:6px;color:#000;font-size:11px;font-weight:700;padding:4px 10px;cursor:pointer;">Filter by this color</button>
