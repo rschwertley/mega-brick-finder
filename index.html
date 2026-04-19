@@ -362,10 +362,11 @@ function clearImage() {
 // ── IDENTIFY ──────────────────────────────────────────────────────────────────
 async function identifyPart() {
   if (!capturedFile) return;
-  showLoading('IDENTIFYING PART...');
+  showLoading('COMPRESSING IMAGE...');
+  await new Promise(resolve => setTimeout(resolve, 50)); // let UI update
   try {
-    // Compress image before sending to Brickognize
-    const compressed = await compressImage(capturedFile, 1000, 0.85);
+    const compressed = await compressImage(capturedFile, 600, 0.75);
+    showLoading('IDENTIFYING PART...');
     const formData = new FormData();
     formData.append('query_image', new File([compressed], 'image.jpg', { type: 'image/jpeg' }));
     const res = await fetch('https://api.brickognize.com/predict/', { method: 'POST', body: formData });
